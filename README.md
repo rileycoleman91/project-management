@@ -29,13 +29,22 @@ In the Supabase SQL editor, run in order:
 1. `supabase/schema.sql` — creates tables and row-level security policies
 2. `supabase/seed.sql` — loads the five demo projects (safe to skip/delete
    once real project data is entered)
+3. `supabase/migrations/002_roles_and_documents.sql` — adds admin/member
+   roles and file-upload support for documents
+
+## Roles
+
+Every signed-in user can view, add, and edit everything. Only **admins** can
+delete records or promote/demote other users' roles (Admin nav item, visible
+to admins only). The first user that existed when migration 002 ran was
+bootstrapped as admin; promote anyone else from that Admin page.
 
 ## Creating logins
 
 There's no self-service signup. Add staff accounts from the Supabase
 dashboard: **Authentication → Users → Add user** (set an email + password,
-or send an invite). Anyone with a Supabase Auth account can see and edit
-every project — there's no per-customer scoping.
+or send an invite). New accounts start as Member — an admin promotes them
+from the in-app Admin page if they need delete/role-management access.
 
 ## Deploying
 
