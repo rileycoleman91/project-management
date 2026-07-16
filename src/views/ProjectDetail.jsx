@@ -427,8 +427,12 @@ export default function ProjectDetail({ project, back, initialTab }) {
           initialValues={phaseModal.phase}
           onClose={() => setPhaseModal(null)}
           onSubmit={async (values) => {
-            if (phaseModal.mode === "edit") await updatePhase(phaseModal.phase.id, project.id, values);
-            else await createPhase(project.id, values);
+            if (phaseModal.mode === "edit") {
+              await updatePhase(phaseModal.phase.id, project.id, { ...values, sortOrder: phaseModal.phase.sortOrder });
+            } else {
+              const nextSortOrder = phases.reduce((max, p) => Math.max(max, p.sortOrder ?? 0), 0) + 1;
+              await createPhase(project.id, { ...values, sortOrder: nextSortOrder });
+            }
             await refresh();
             setPhaseModal(null);
           }}

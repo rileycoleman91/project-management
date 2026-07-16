@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
+import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from "react";
 import { loadPortfolio } from "../lib/api";
 
 const DataContext = createContext(null);
@@ -7,11 +7,17 @@ const EMPTY = { projects: [], schedules: {}, budgets: {}, punchlists: {}, docume
 
 export function DataProvider({ children }) {
   const [data, setData] = useState(EMPTY);
+  // Only the very first load should replace the whole screen with a loading
+  // state. Every later refresh() call (after any add/edit/delete) updates
+  // data in place — flipping `loading` back to true on every save would
+  // unmount/remount whatever view is on screen (e.g. ProjectDetail), losing
+  // the selected tab and any open modal.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasLoadedOnce = useRef(false);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedOnce.current) setLoading(true);
     try {
       const portfolio = await loadPortfolio();
       setData(portfolio);
@@ -19,6 +25,7 @@ export function DataProvider({ children }) {
     } catch (err) {
       setError(err.message || "Failed to load data");
     } finally {
+      hasLoadedOnce.current = true;
       setLoading(false);
     }
   }, []);
