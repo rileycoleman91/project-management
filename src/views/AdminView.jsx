@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Plus } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { listProfiles, updateProfileRole } from "../lib/api";
+import { listProfiles, updateProfileRole, createUser } from "../lib/api";
+import EntityModal from "../components/EntityModal";
+import { NEW_USER_FIELDS } from "../lib/fieldSchemas";
 
 export default function AdminView() {
   const { profile: myProfile } = useAuth();
   const [profiles, setProfiles] = useState(null);
   const [error, setError] = useState("");
+  const [newUserModal, setNewUserModal] = useState(false);
 
   const load = async () => {
     try {
@@ -31,9 +34,14 @@ export default function AdminView() {
   return (
     <div className="p-4 sm:p-8 space-y-4">
       <div className="bg-white border border-stone-200 rounded-md">
-        <div className="px-5 py-4 border-b border-stone-200 flex items-center gap-2">
-          <ShieldCheck size={15} className="text-orange-600" />
-          <h2 className="f-display text-sm tracking-wide text-stone-800 uppercase">Staff Accounts</h2>
+        <div className="px-5 py-4 border-b border-stone-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={15} className="text-orange-600" />
+            <h2 className="f-display text-sm tracking-wide text-stone-800 uppercase">Staff Accounts</h2>
+          </div>
+          <button onClick={() => setNewUserModal(true)} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+            <Plus size={13} /> New User
+          </button>
         </div>
         {error && <div className="px-5 py-3 f-body text-sm text-red-600">{error}</div>}
         {!profiles ? (
@@ -61,8 +69,21 @@ export default function AdminView() {
         )}
       </div>
       <p className="f-body text-xs text-stone-400">
-        New accounts are created from the Supabase dashboard (Authentication → Users) and start as Member. Promote them to Admin here once they've signed in.
+        New users start signed out — share their email and temporary password with them directly so they can sign in and, if you'd like, change their password afterward.
       </p>
+
+      {newUserModal && (
+        <EntityModal
+          title="New User"
+          fields={NEW_USER_FIELDS}
+          onClose={() => setNewUserModal(false)}
+          onSubmit={async (values) => {
+            await createUser(values);
+            await load();
+            setNewUserModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

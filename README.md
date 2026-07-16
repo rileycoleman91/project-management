@@ -31,6 +31,17 @@ In the Supabase SQL editor, run in order:
    once real project data is entered)
 3. `supabase/migrations/002_roles_and_documents.sql` — adds admin/member
    roles and file-upload support for documents
+4. `supabase/migrations/003_rooms_and_materials.sql` — materials/selections
+   tracking, scoped per room per project
+5. `supabase/migrations/004_materials_phase_and_budget_links.sql` — optional
+   phase/budget-category links + cost on materials
+
+Also deploy the edge function (from the Supabase CLI, or paste
+`supabase/functions/admin-create-user/index.ts` into a new Edge Function in
+the dashboard): `supabase functions deploy admin-create-user`. It needs no
+extra secrets — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+`SUPABASE_SERVICE_ROLE_KEY` are auto-injected for every edge function in a
+project.
 
 ## Roles
 
@@ -41,10 +52,13 @@ bootstrapped as admin; promote anyone else from that Admin page.
 
 ## Creating logins
 
-There's no self-service signup. Add staff accounts from the Supabase
-dashboard: **Authentication → Users → Add user** (set an email + password,
-or send an invite). New accounts start as Member — an admin promotes them
-from the in-app Admin page if they need delete/role-management access.
+Admins can create staff accounts directly from the in-app **Admin** page
+(New User → email + temporary password + role) — this calls the
+`admin-create-user` edge function, which is the only thing allowed to use
+the service-role key. Share the email/temporary password with the new user
+directly; there's no invite-email flow. Accounts can still be created from
+the Supabase dashboard (**Authentication → Users → Add user**) too, if
+preferred — those start as Member until an admin promotes them.
 
 ## Deploying
 

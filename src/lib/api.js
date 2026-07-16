@@ -378,6 +378,21 @@ export async function updateProfileRole(id, role) {
   if (error) throw error;
 }
 
+// Creating an auth user requires the service-role key, which must never
+// ship to the browser — this calls a Supabase Edge Function that holds
+// that key server-side and checks the caller is an admin before acting.
+export async function createUser({ email, password, fullName, role }) {
+  const { data, error } = await supabase.functions.invoke("admin-create-user", {
+    body: { email, password, fullName, role },
+  });
+  if (error) {
+    const message = (await error.context?.json?.().catch(() => null))?.error || error.message;
+    throw new Error(message);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 /* ---------------------------------------------------------------
    ROOMS + MATERIALS
 --------------------------------------------------------------- */

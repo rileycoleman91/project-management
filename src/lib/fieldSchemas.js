@@ -57,6 +57,13 @@ export const ROOM_FIELDS = [
   { key: "name", label: "Room Name", type: "text", required: true, placeholder: "Kitchen, Primary Bath…" },
 ];
 
+export const NEW_USER_FIELDS = [
+  { key: "email", label: "Email", type: "email", required: true },
+  { key: "password", label: "Temporary Password", type: "password", required: true, placeholder: "At least 8 characters" },
+  { key: "fullName", label: "Full Name", type: "text" },
+  { key: "role", label: "Role", type: "select", required: true, options: ["member", "admin"] },
+];
+
 // Phase/budget options depend on the project the material belongs to, so
 // this is a function rather than a static array — called with that
 // project's current phases and budget line items each time the modal opens.
