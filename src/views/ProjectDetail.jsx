@@ -4,7 +4,7 @@ import {
 } from "recharts";
 import {
   DollarSign, Calendar, ClipboardList, TrendingUp, MapPin, Phone, FileText,
-  Plus, Pencil, Trash2, Download, ExternalLink
+  Plus, Pencil, Trash2, Download, ExternalLink, Package
 } from "lucide-react";
 import { useData } from "../data/DataProvider";
 import { useAuth } from "../auth/AuthProvider";
@@ -13,7 +13,7 @@ import { StatCard, StatusBadge, ProgressBar } from "../components/ui";
 import GanttChart from "../components/GanttChart";
 import EntityModal from "../components/EntityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { PROJECT_FIELDS, PHASE_FIELDS, BUDGET_FIELDS, PUNCH_FIELDS, DOCUMENT_FIELDS } from "../lib/fieldSchemas";
+import { PROJECT_FIELDS, PHASE_FIELDS, BUDGET_FIELDS, PUNCH_FIELDS, DOCUMENT_FIELDS, ROOM_FIELDS, MATERIAL_FIELDS } from "../lib/fieldSchemas";
 import { fmtMoney, fmtMoneyShort, fmtDate, daysBetween, TODAY, PUNCH_STATUS_CYCLE } from "../lib/format";
 import { exportCsv } from "../lib/csv";
 import {
@@ -23,19 +23,22 @@ import {
   createPunchItem, updatePunchItem, updatePunchlistStatus, deletePunchItem,
   createDocument, updateDocument, deleteDocument, uploadDocumentFile, getDocumentDownloadUrl,
   assignTeamMember, unassignTeamMember,
+  createRoom, updateRoom, deleteRoom, createMaterial, updateMaterial, deleteMaterial,
 } from "../lib/api";
 
 export default function ProjectDetail({ project, back, initialTab }) {
-  const { schedules, budgets, punchlists, documents, teamByProject, team, refresh } = useData();
+  const { schedules, budgets, punchlists, documents, teamByProject, team, rooms, materials, materialsByRoom, refresh } = useData();
   const { isAdmin } = useAuth();
   const [tab, setTab] = useState(initialTab || "Overview");
-  const tabs = ["Overview", "Schedule", "Budget", "Punch List", "Documents", "Team"];
+  const tabs = ["Overview", "Schedule", "Budget", "Punch List", "Documents", "Materials", "Team"];
   const phases = schedules[project.id] || [];
   const budget = budgets[project.id] || [];
   const punch = punchlists[project.id] || [];
   const docs = documents[project.id] || [];
   const crew = teamByProject[project.id] || [];
   const unassigned = team.filter((t) => !crew.some((c) => c.id === t.id));
+  const projectRooms = rooms[project.id] || [];
+  const projectMaterials = materials[project.id] || [];
   const budgetChart = budget.map((b) => ({ name: b.category, Budgeted: b.budgeted, Actual: b.actual }));
   const pctSpent = project.budgetTotal ? Math.round((project.budgetSpent / project.budgetTotal) * 100) : 0;
 
@@ -49,6 +52,10 @@ export default function ProjectDetail({ project, back, initialTab }) {
   const [docModal, setDocModal] = useState(null);
   const [deletingDoc, setDeletingDoc] = useState(null);
   const [assignId, setAssignId] = useState("");
+  const [roomModal, setRoomModal] = useState(null);
+  const [deletingRoom, setDeletingRoom] = useState(null);
+  const [materialModal, setMaterialModal] = useState(null);
+  const [deletingMaterial, setDeletingMaterial] = useState(null);
 
   const cyclePunchStatus = async (item) => {
     await updatePunchlistStatus(item.id, PUNCH_STATUS_CYCLE[item.status]);
@@ -372,6 +379,84 @@ export default function ProjectDetail({ project, back, initialTab }) {
           </div>
         )}
 
+        {tab === "Materials" && (
+          <div className="space-y-4">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => exportCsv(`${project.name}-materials.csv`,
+                  [{ key: "room", label: "Room" }, { key: "item", label: "Item" }, { key: "manufacturer", label: "Manufacturer" }, { key: "color", label: "Color" }, { key: "details", label: "Details" }, { key: "status", label: "Status" }],
+                  projectMaterials.map((m) => ({ ...m, room: projectRooms.find((r) => r.id === m.roomId)?.name || "" })))}
+                disabled={projectMaterials.length === 0}
+                className="flex items-center gap-1.5 f-body text-sm border border-stone-300 text-stone-700 px-3 py-1.5 rounded-md hover:bg-stone-50 disabled:opacity-40"
+              >
+                <Download size={13} /> Export
+              </button>
+              <button onClick={() => setRoomModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+                <Plus size={13} /> Add Room
+              </button>
+            </div>
+            {projectRooms.length === 0 ? (
+              <div className="bg-white border border-stone-200 rounded-md p-8 text-center f-body text-sm text-stone-400">No rooms yet — add a room to start tracking materials.</div>
+            ) : (
+              projectRooms.map((room) => {
+                const roomMaterials = materialsByRoom[room.id] || [];
+                return (
+                  <div key={room.id} className="bg-white border border-stone-200 rounded-md">
+                    <div className="px-5 py-3 border-b border-stone-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Package size={14} className="text-orange-600" />
+                        <h3 className="f-display text-sm tracking-wide text-stone-800">{room.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setMaterialModal({ mode: "new", roomId: room.id })} className="flex items-center gap-1.5 f-mono text-[11px] uppercase text-stone-500 hover:text-orange-600">
+                          <Plus size={13} /> Add Material
+                        </button>
+                        <button onClick={() => setRoomModal({ mode: "edit", room })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                        {isAdmin && <button onClick={() => setDeletingRoom(room)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
+                      </div>
+                    </div>
+                    {roomMaterials.length === 0 ? (
+                      <div className="p-6 text-center f-body text-sm text-stone-400">No materials added for this room yet.</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                      <table className="w-full min-w-[560px]">
+                        <thead>
+                          <tr className="f-mono text-[10px] uppercase tracking-wide text-stone-400 border-b border-stone-100">
+                            <td className="px-5 py-2">Item</td>
+                            <td className="px-5 py-2">Manufacturer</td>
+                            <td className="px-5 py-2">Color</td>
+                            <td className="px-5 py-2 hidden sm:table-cell">Details</td>
+                            <td className="px-5 py-2">Status</td>
+                            <td className="px-5 py-2"></td>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {roomMaterials.map((m) => (
+                            <tr key={m.id} className="border-b border-stone-100 last:border-b-0">
+                              <td className="px-5 py-2.5 f-body text-sm text-stone-800">{m.item}</td>
+                              <td className="px-5 py-2.5 f-body text-xs text-stone-600">{m.manufacturer}</td>
+                              <td className="px-5 py-2.5 f-body text-xs text-stone-600">{m.color}</td>
+                              <td className="px-5 py-2.5 f-body text-xs text-stone-500 hidden sm:table-cell">{m.details}</td>
+                              <td className="px-5 py-2.5"><StatusBadge status={m.status} /></td>
+                              <td className="px-5 py-2.5">
+                                <div className="flex items-center gap-2 justify-end">
+                                  <button onClick={() => setMaterialModal({ mode: "edit", roomId: room.id, material: m })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                                  {isAdmin && <button onClick={() => setDeletingMaterial(m)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
         {tab === "Team" && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
@@ -519,6 +604,55 @@ export default function ProjectDetail({ project, back, initialTab }) {
           message={`Delete "${deletingDoc.name}"?${deletingDoc.filePath ? " The uploaded file will be removed too." : ""}`}
           onCancel={() => setDeletingDoc(null)}
           onConfirm={async () => { await deleteDocument(deletingDoc.id, deletingDoc.filePath); await refresh(); setDeletingDoc(null); }}
+        />
+      )}
+
+      {roomModal && (
+        <EntityModal
+          title={roomModal.mode === "edit" ? "Edit Room" : "Add Room"}
+          fields={ROOM_FIELDS}
+          initialValues={roomModal.room}
+          onClose={() => setRoomModal(null)}
+          onSubmit={async (values) => {
+            if (roomModal.mode === "edit") await updateRoom(roomModal.room.id, values);
+            else {
+              const nextSortOrder = projectRooms.reduce((max, r) => Math.max(max, r.sortOrder ?? 0), 0) + 1;
+              await createRoom(project.id, { ...values, sortOrder: nextSortOrder });
+            }
+            await refresh();
+            setRoomModal(null);
+          }}
+        />
+      )}
+      {deletingRoom && (
+        <ConfirmDialog
+          title="Delete Room"
+          message={`Delete "${deletingRoom.name}" and all of its materials? This can't be undone.`}
+          onCancel={() => setDeletingRoom(null)}
+          onConfirm={async () => { await deleteRoom(deletingRoom.id); await refresh(); setDeletingRoom(null); }}
+        />
+      )}
+
+      {materialModal && (
+        <EntityModal
+          title={materialModal.mode === "edit" ? "Edit Material" : "Add Material"}
+          fields={MATERIAL_FIELDS}
+          initialValues={materialModal.material}
+          onClose={() => setMaterialModal(null)}
+          onSubmit={async (values) => {
+            if (materialModal.mode === "edit") await updateMaterial(materialModal.material.id, project.id, materialModal.roomId, values);
+            else await createMaterial(project.id, materialModal.roomId, values);
+            await refresh();
+            setMaterialModal(null);
+          }}
+        />
+      )}
+      {deletingMaterial && (
+        <ConfirmDialog
+          title="Delete Material"
+          message={`Delete "${deletingMaterial.item}"?`}
+          onCancel={() => setDeletingMaterial(null)}
+          onConfirm={async () => { await deleteMaterial(deletingMaterial.id); await refresh(); setDeletingMaterial(null); }}
         />
       )}
     </div>

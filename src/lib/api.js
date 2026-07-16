@@ -74,6 +74,24 @@ const profile = (row) => ({
   role: row.role,
 });
 
+const room = (row) => ({
+  id: row.id,
+  projectId: row.project_id,
+  name: row.name,
+  sortOrder: row.sort_order,
+});
+
+const material = (row) => ({
+  id: row.id,
+  projectId: row.project_id,
+  roomId: row.room_id,
+  item: row.item,
+  manufacturer: row.manufacturer,
+  color: row.color,
+  details: row.details,
+  status: row.status,
+});
+
 // Loads everything the app needs in one pass and shapes it into the same
 // structure the original prototype used (PROJECTS array, SCHEDULES/BUDGETS/
 // etc keyed by project id), so the view components didn't need to change.
@@ -87,6 +105,8 @@ export async function loadPortfolio() {
     { data: teamRows, error: teamErr },
     { data: linkRows, error: linkErr },
     { data: alertRows, error: alertErr },
+    { data: roomRows, error: roomErr },
+    { data: materialRows, error: materialErr },
   ] = await Promise.all([
     supabase.from("projects").select("*").order("created_at"),
     supabase.from("schedule_phases").select("*").order("sort_order"),
@@ -96,14 +116,16 @@ export async function loadPortfolio() {
     supabase.from("team_members").select("*").order("name"),
     supabase.from("project_team").select("*"),
     supabase.from("alerts").select("*").order("created_at"),
+    supabase.from("rooms").select("*").order("sort_order"),
+    supabase.from("materials").select("*").order("item"),
   ]);
 
-  const err = projectErr || phaseErr || budgetErr || punchErr || docErr || teamErr || linkErr || alertErr;
+  const err = projectErr || phaseErr || budgetErr || punchErr || docErr || teamErr || linkErr || alertErr || roomErr || materialErr;
   if (err) throw err;
 
-  const groupBy = (rows, mapFn) =>
+  const groupBy = (rows, mapFn, key = "project_id") =>
     rows.reduce((acc, row) => {
-      (acc[row.project_id] ||= []).push(mapFn(row));
+      (acc[row[key]] ||= []).push(mapFn(row));
       return acc;
     }, {});
 
@@ -122,6 +144,9 @@ export async function loadPortfolio() {
     team: teamRows.map(teamMember),
     teamByProject,
     alerts: alertRows.map(alert),
+    rooms: groupBy(roomRows, room),
+    materials: groupBy(materialRows, material),
+    materialsByRoom: groupBy(materialRows, material, "room_id"),
   };
 }
 
@@ -347,5 +372,53 @@ export async function listProfiles() {
 
 export async function updateProfileRole(id, role) {
   const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
+  if (error) throw error;
+}
+
+/* ---------------------------------------------------------------
+   ROOMS + MATERIALS
+--------------------------------------------------------------- */
+export async function createRoom(projectId, input) {
+  const { data, error } = await supabase
+    .from("rooms")
+    .insert({ project_id: projectId, name: input.name, sort_order: input.sortOrder ?? 0 })
+    .select()
+    .single();
+  if (error) throw error;
+  return room(data);
+}
+
+export async function updateRoom(id, input) {
+  const { error } = await supabase.from("rooms").update({ name: input.name }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteRoom(id) {
+  const { error } = await supabase.from("rooms").delete().eq("id", id);
+  if (error) throw error;
+}
+
+const materialPayload = (projectId, roomId, input) => ({
+  project_id: projectId,
+  room_id: roomId,
+  item: input.item,
+  manufacturer: input.manufacturer,
+  color: input.color,
+  details: input.details,
+  status: input.status ?? "Selected",
+});
+
+export async function createMaterial(projectId, roomId, input) {
+  const { error } = await supabase.from("materials").insert(materialPayload(projectId, roomId, input));
+  if (error) throw error;
+}
+
+export async function updateMaterial(id, projectId, roomId, input) {
+  const { error } = await supabase.from("materials").update(materialPayload(projectId, roomId, input)).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteMaterial(id) {
+  const { error } = await supabase.from("materials").delete().eq("id", id);
   if (error) throw error;
 }

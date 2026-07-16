@@ -22,6 +22,10 @@ export const STATUS_STYLES = {
   "Current": "bg-blue-50 text-blue-700 border-blue-200",
   "Signed": "bg-green-50 text-green-700 border-green-200",
   "Draft": "bg-stone-100 text-stone-600 border-stone-300",
+  "Selected": "bg-stone-100 text-stone-600 border-stone-300",
+  "Ordered": "bg-blue-50 text-blue-700 border-blue-200",
+  "Delivered": "bg-amber-50 text-amber-700 border-amber-200",
+  "Installed": "bg-green-50 text-green-700 border-green-200",
 };
 export const statusStyle = (s) => STATUS_STYLES[s] || "bg-stone-100 text-stone-600 border-stone-300";
 

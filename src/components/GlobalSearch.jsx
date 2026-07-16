@@ -1,14 +1,14 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { Search, Building2, ClipboardList, FileText, Users, X } from "lucide-react";
+import { Search, Building2, ClipboardList, FileText, Users, Package, X } from "lucide-react";
 import { useData } from "../data/DataProvider";
 
-const TYPE_FILTERS = ["All", "Projects", "Punch List", "Documents", "Team"];
-const TYPE_ICON = { Projects: Building2, "Punch List": ClipboardList, Documents: FileText, Team: Users };
+const TYPE_FILTERS = ["All", "Projects", "Punch List", "Documents", "Materials", "Team"];
+const TYPE_ICON = { Projects: Building2, "Punch List": ClipboardList, Documents: FileText, Materials: Package, Team: Users };
 
 // Client-side search across everything already loaded into DataProvider —
 // no extra network round trip needed since the whole portfolio is in memory.
 export default function GlobalSearch({ onNavigate }) {
-  const { projects, punchlists, documents, team } = useData();
+  const { projects, punchlists, documents, team, rooms, materials } = useData();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [open, setOpen] = useState(false);
@@ -24,9 +24,10 @@ export default function GlobalSearch({ onNavigate }) {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return { Projects: [], "Punch List": [], Documents: [], Team: [] };
+    if (!q) return { Projects: [], "Punch List": [], Documents: [], Materials: [], Team: [] };
 
     const projectName = (id) => projects.find((p) => p.id === id)?.name || "";
+    const roomName = (pid, rid) => (rooms[pid] || []).find((r) => r.id === rid)?.name || "";
 
     const matchProjects = projects
       .filter((p) => `${p.name} ${p.client} ${p.address}`.toLowerCase().includes(q))
@@ -42,12 +43,17 @@ export default function GlobalSearch({ onNavigate }) {
       .filter((d) => `${d.name} ${d.category}`.toLowerCase().includes(q))
       .map((d) => ({ id: d.id, label: d.name, sub: `${projectName(d.pid)} · ${d.category}`, nav: { view: "dashboard", projectId: d.pid, tab: "Documents" } }));
 
+    const matchMaterials = Object.entries(materials)
+      .flatMap(([pid, items]) => items.map((m) => ({ ...m, pid })))
+      .filter((m) => `${m.item} ${m.manufacturer} ${m.color} ${m.details}`.toLowerCase().includes(q))
+      .map((m) => ({ id: m.id, label: m.item, sub: `${projectName(m.pid)} · ${roomName(m.pid, m.roomId)}`, nav: { view: "dashboard", projectId: m.pid, tab: "Materials" } }));
+
     const matchTeam = team
       .filter((t) => `${t.name} ${t.role} ${t.trade}`.toLowerCase().includes(q))
       .map((t) => ({ id: t.id, label: t.name, sub: t.role, nav: { view: "team" } }));
 
-    return { Projects: matchProjects, "Punch List": matchPunch, Documents: matchDocs, Team: matchTeam };
-  }, [query, projects, punchlists, documents, team]);
+    return { Projects: matchProjects, "Punch List": matchPunch, Documents: matchDocs, Materials: matchMaterials, Team: matchTeam };
+  }, [query, projects, punchlists, documents, materials, rooms, team]);
 
   const visibleGroups = typeFilter === "All" ? TYPE_FILTERS.slice(1) : [typeFilter];
   const totalCount = visibleGroups.reduce((sum, g) => sum + results[g].length, 0);

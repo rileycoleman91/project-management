@@ -3,7 +3,7 @@ import { loadPortfolio } from "../lib/api";
 
 const DataContext = createContext(null);
 
-const EMPTY = { projects: [], schedules: {}, budgets: {}, punchlists: {}, documents: {}, team: [], teamByProject: {}, alerts: [] };
+const EMPTY = { projects: [], schedules: {}, budgets: {}, punchlists: {}, documents: {}, team: [], teamByProject: {}, alerts: [], rooms: {}, materials: {}, materialsByRoom: {} };
 
 export function DataProvider({ children }) {
   const [data, setData] = useState(EMPTY);

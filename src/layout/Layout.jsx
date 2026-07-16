@@ -1,7 +1,7 @@
 import React from "react";
 import {
   LayoutDashboard, Building2, Calendar, DollarSign, Users, BarChart3,
-  ArrowLeft, HardHat, LogOut, ShieldCheck
+  ArrowLeft, HardHat, LogOut, ShieldCheck, Package
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { TODAY } from "../lib/format";
@@ -11,6 +11,7 @@ export const NAV_ITEMS = [
   { key: "projects", label: "Projects", icon: Building2 },
   { key: "schedule", label: "Schedule", icon: Calendar },
   { key: "budget", label: "Budget", icon: DollarSign },
+  { key: "materials", label: "Materials", icon: Package },
   { key: "team", label: "Team", icon: Users },
   { key: "reports", label: "Reports", icon: BarChart3 },
 ];

@@ -52,3 +52,15 @@ export const TEAM_FIELDS = [
   { key: "trade", label: "Trade", type: "text" },
   { key: "phone", label: "Phone", type: "text" },
 ];
+
+export const ROOM_FIELDS = [
+  { key: "name", label: "Room Name", type: "text", required: true, placeholder: "Kitchen, Primary Bath…" },
+];
+
+export const MATERIAL_FIELDS = [
+  { key: "item", label: "Item", type: "text", required: true, placeholder: "Countertop, Faucet, Flooring Tile…" },
+  { key: "manufacturer", label: "Manufacturer", type: "text" },
+  { key: "color", label: "Color / Finish", type: "text" },
+  { key: "details", label: "Details", type: "text" },
+  { key: "status", label: "Status", type: "select", required: true, options: ["Selected", "Ordered", "Delivered", "Installed"] },
+];

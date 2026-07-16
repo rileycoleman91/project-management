@@ -9,6 +9,7 @@ import DashboardView from "./views/DashboardView";
 import ProjectsView from "./views/ProjectsView";
 import ScheduleView from "./views/ScheduleView";
 import BudgetView from "./views/BudgetView";
+import MaterialsView from "./views/MaterialsView";
 import TeamView from "./views/TeamView";
 import ReportsView from "./views/ReportsView";
 import AdminView from "./views/AdminView";
@@ -26,6 +27,7 @@ const TITLES = {
   projects: "Projects",
   schedule: "Schedule",
   budget: "Budget",
+  materials: "Materials",
   team: "Team",
   reports: "Reports",
   admin: "Admin",
@@ -38,7 +40,7 @@ function DashboardShell() {
   const { projects, loading, error } = useData();
   const { isAdmin } = useAuth();
 
-  const goProject = (id) => { setSelectedProjectId(id); setInitialTab(null); };
+  const goProject = (id, tab) => { setSelectedProjectId(id); setInitialTab(tab || null); };
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   const handleNavigate = ({ view: v, projectId, tab }) => {
@@ -75,6 +77,7 @@ function DashboardShell() {
             {view === "projects" && <ProjectsView goProject={goProject} />}
             {view === "schedule" && <ScheduleView goProject={goProject} />}
             {view === "budget" && <BudgetView goProject={goProject} />}
+            {view === "materials" && <MaterialsView goProject={goProject} />}
             {view === "team" && <TeamView />}
             {view === "reports" && <ReportsView goProject={goProject} />}
             {view === "admin" && isAdmin && <AdminView />}
