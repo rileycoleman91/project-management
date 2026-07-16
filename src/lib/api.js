@@ -90,6 +90,9 @@ const material = (row) => ({
   color: row.color,
   details: row.details,
   status: row.status,
+  cost: row.cost != null ? Number(row.cost) : null,
+  phaseId: row.phase_id,
+  budgetItemId: row.budget_item_id,
 });
 
 // Loads everything the app needs in one pass and shapes it into the same
@@ -406,6 +409,9 @@ const materialPayload = (projectId, roomId, input) => ({
   color: input.color,
   details: input.details,
   status: input.status ?? "Selected",
+  cost: input.cost === "" || input.cost == null ? null : Number(input.cost),
+  phase_id: input.phaseId || null,
+  budget_item_id: input.budgetItemId || null,
 });
 
 export async function createMaterial(projectId, roomId, input) {

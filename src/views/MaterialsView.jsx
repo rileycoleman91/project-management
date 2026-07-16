@@ -3,6 +3,7 @@ import { Search, Download } from "lucide-react";
 import { useData } from "../data/DataProvider";
 import { StatusBadge } from "../components/ui";
 import { exportCsv } from "../lib/csv";
+import { fmtMoney } from "../lib/format";
 
 // Portfolio-wide view over every material across every project/room, so
 // staff can search or filter by project and/or room without having to open
@@ -64,7 +65,7 @@ export default function MaterialsView({ goProject }) {
         </select>
         <button
           onClick={() => exportCsv("materials.csv",
-            [{ key: "projectName", label: "Project" }, { key: "roomName", label: "Room" }, { key: "item", label: "Item" }, { key: "manufacturer", label: "Manufacturer" }, { key: "color", label: "Color" }, { key: "details", label: "Details" }, { key: "status", label: "Status" }],
+            [{ key: "projectName", label: "Project" }, { key: "roomName", label: "Room" }, { key: "item", label: "Item" }, { key: "manufacturer", label: "Manufacturer" }, { key: "color", label: "Color" }, { key: "details", label: "Details" }, { key: "cost", label: "Cost" }, { key: "status", label: "Status" }],
             filtered)}
           disabled={filtered.length === 0}
           className="sm:ml-auto flex items-center gap-1.5 f-body text-sm border border-stone-300 text-stone-700 px-3.5 py-2 rounded-md hover:bg-stone-50 disabled:opacity-40 whitespace-nowrap"
@@ -85,6 +86,7 @@ export default function MaterialsView({ goProject }) {
                 <td className="px-5 py-2">Item</td>
                 <td className="px-5 py-2 hidden md:table-cell">Manufacturer</td>
                 <td className="px-5 py-2 hidden md:table-cell">Color</td>
+                <td className="px-5 py-2 hidden lg:table-cell">Cost</td>
                 <td className="px-5 py-2">Status</td>
               </tr>
             </thead>
@@ -96,6 +98,7 @@ export default function MaterialsView({ goProject }) {
                   <td className="px-5 py-3 f-body text-sm text-stone-800">{m.item}</td>
                   <td className="px-5 py-3 f-body text-xs text-stone-500 hidden md:table-cell">{m.manufacturer}</td>
                   <td className="px-5 py-3 f-body text-xs text-stone-500 hidden md:table-cell">{m.color}</td>
+                  <td className="px-5 py-3 f-mono text-xs text-stone-500 hidden lg:table-cell">{m.cost != null ? fmtMoney(m.cost) : "—"}</td>
                   <td className="px-5 py-3"><StatusBadge status={m.status} /></td>
                 </tr>
               ))}

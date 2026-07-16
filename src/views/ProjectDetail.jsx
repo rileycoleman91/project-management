@@ -13,7 +13,7 @@ import { StatCard, StatusBadge, ProgressBar } from "../components/ui";
 import GanttChart from "../components/GanttChart";
 import EntityModal from "../components/EntityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { PROJECT_FIELDS, PHASE_FIELDS, BUDGET_FIELDS, PUNCH_FIELDS, DOCUMENT_FIELDS, ROOM_FIELDS, MATERIAL_FIELDS } from "../lib/fieldSchemas";
+import { PROJECT_FIELDS, PHASE_FIELDS, BUDGET_FIELDS, PUNCH_FIELDS, DOCUMENT_FIELDS, ROOM_FIELDS, getMaterialFields } from "../lib/fieldSchemas";
 import { fmtMoney, fmtMoneyShort, fmtDate, daysBetween, TODAY, PUNCH_STATUS_CYCLE } from "../lib/format";
 import { exportCsv } from "../lib/csv";
 import {
@@ -229,25 +229,31 @@ export default function ProjectDetail({ project, back, initialTab }) {
               {budget.length === 0 ? (
                 <div className="p-8 text-center f-body text-sm text-stone-400">No budget line items yet.</div>
               ) : (
-              <table className="w-full min-w-[460px]">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="f-mono text-[10px] uppercase tracking-wide text-stone-400 border-b border-stone-100">
                     <td className="px-5 py-2">Category</td>
                     <td className="px-5 py-2">Budgeted</td>
                     <td className="px-5 py-2">Actual</td>
                     <td className="px-5 py-2">Variance</td>
+                    <td className="px-5 py-2 hidden sm:table-cell">Materials</td>
                     <td className="px-5 py-2"></td>
                   </tr>
                 </thead>
                 <tbody>
                   {budget.map((b) => {
                     const variance = b.budgeted - b.actual;
+                    const linkedMaterials = projectMaterials.filter((m) => m.budgetItemId === b.id);
+                    const materialsCost = linkedMaterials.reduce((sum, m) => sum + (m.cost || 0), 0);
                     return (
                       <tr key={b.id} className="border-b border-stone-100 last:border-b-0">
                         <td className="px-5 py-2.5 f-body text-sm text-stone-800">{b.category}</td>
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-600">{fmtMoney(b.budgeted)}</td>
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-600">{fmtMoney(b.actual)}</td>
                         <td className={`px-5 py-2.5 f-mono text-xs ${variance < 0 ? "text-red-600" : "text-green-700"}`}>{variance < 0 ? "-" : "+"}{fmtMoney(Math.abs(variance))}</td>
+                        <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden sm:table-cell">
+                          {linkedMaterials.length === 0 ? "—" : `${linkedMaterials.length} · ${fmtMoney(materialsCost)}`}
+                        </td>
                         <td className="px-5 py-2.5">
                           <div className="flex items-center gap-2 justify-end">
                             <button onClick={() => setBudgetModal({ mode: "edit", item: b })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
@@ -384,8 +390,13 @@ export default function ProjectDetail({ project, back, initialTab }) {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => exportCsv(`${project.name}-materials.csv`,
-                  [{ key: "room", label: "Room" }, { key: "item", label: "Item" }, { key: "manufacturer", label: "Manufacturer" }, { key: "color", label: "Color" }, { key: "details", label: "Details" }, { key: "status", label: "Status" }],
-                  projectMaterials.map((m) => ({ ...m, room: projectRooms.find((r) => r.id === m.roomId)?.name || "" })))}
+                  [{ key: "room", label: "Room" }, { key: "item", label: "Item" }, { key: "manufacturer", label: "Manufacturer" }, { key: "color", label: "Color" }, { key: "details", label: "Details" }, { key: "phase", label: "Phase" }, { key: "budgetCategory", label: "Budget Category" }, { key: "cost", label: "Cost" }, { key: "status", label: "Status" }],
+                  projectMaterials.map((m) => ({
+                    ...m,
+                    room: projectRooms.find((r) => r.id === m.roomId)?.name || "",
+                    phase: phases.find((p) => p.id === m.phaseId)?.phase || "",
+                    budgetCategory: budget.find((b) => b.id === m.budgetItemId)?.category || "",
+                  })))}
                 disabled={projectMaterials.length === 0}
                 className="flex items-center gap-1.5 f-body text-sm border border-stone-300 text-stone-700 px-3 py-1.5 rounded-md hover:bg-stone-50 disabled:opacity-40"
               >
@@ -419,13 +430,15 @@ export default function ProjectDetail({ project, back, initialTab }) {
                       <div className="p-6 text-center f-body text-sm text-stone-400">No materials added for this room yet.</div>
                     ) : (
                       <div className="overflow-x-auto">
-                      <table className="w-full min-w-[560px]">
+                      <table className="w-full min-w-[720px]">
                         <thead>
                           <tr className="f-mono text-[10px] uppercase tracking-wide text-stone-400 border-b border-stone-100">
                             <td className="px-5 py-2">Item</td>
                             <td className="px-5 py-2">Manufacturer</td>
                             <td className="px-5 py-2">Color</td>
                             <td className="px-5 py-2 hidden sm:table-cell">Details</td>
+                            <td className="px-5 py-2 hidden md:table-cell">Phase</td>
+                            <td className="px-5 py-2 hidden md:table-cell">Cost</td>
                             <td className="px-5 py-2">Status</td>
                             <td className="px-5 py-2"></td>
                           </tr>
@@ -437,6 +450,8 @@ export default function ProjectDetail({ project, back, initialTab }) {
                               <td className="px-5 py-2.5 f-body text-xs text-stone-600">{m.manufacturer}</td>
                               <td className="px-5 py-2.5 f-body text-xs text-stone-600">{m.color}</td>
                               <td className="px-5 py-2.5 f-body text-xs text-stone-500 hidden sm:table-cell">{m.details}</td>
+                              <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden md:table-cell">{phases.find((p) => p.id === m.phaseId)?.phase || "—"}</td>
+                              <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden md:table-cell">{m.cost != null ? fmtMoney(m.cost) : "—"}</td>
                               <td className="px-5 py-2.5"><StatusBadge status={m.status} /></td>
                               <td className="px-5 py-2.5">
                                 <div className="flex items-center gap-2 justify-end">
@@ -636,7 +651,7 @@ export default function ProjectDetail({ project, back, initialTab }) {
       {materialModal && (
         <EntityModal
           title={materialModal.mode === "edit" ? "Edit Material" : "Add Material"}
-          fields={MATERIAL_FIELDS}
+          fields={getMaterialFields(phases, budget)}
           initialValues={materialModal.material}
           onClose={() => setMaterialModal(null)}
           onSubmit={async (values) => {

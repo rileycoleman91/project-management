@@ -4,6 +4,12 @@ import { X } from "lucide-react";
 const inputClass = "w-full mt-1 f-body text-sm px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500";
 const labelClass = "f-mono text-[11px] uppercase tracking-wide text-stone-500";
 
+// Select options are either plain strings (value === label, e.g. status
+// enums) or {value, label} objects (e.g. "assign to this phase" dropdowns
+// where the stored value is an id but the display should be a name).
+const optionValue = (opt) => (typeof opt === "object" ? opt.value : opt);
+const optionLabel = (opt) => (typeof opt === "object" ? opt.label : opt);
+
 // Generic add/edit form modal driven by a field schema, so every entity
 // (project, phase, budget item, punch item, document, team member) reuses
 // the same modal shell instead of a bespoke component each.
@@ -11,7 +17,7 @@ export default function EntityModal({ title, fields, initialValues, onClose, onS
   const [values, setValues] = useState(() => {
     const v = {};
     fields.forEach((f) => {
-      v[f.key] = initialValues?.[f.key] ?? (f.type === "number" ? 0 : f.type === "select" ? f.options[0] : "");
+      v[f.key] = initialValues?.[f.key] ?? (f.type === "number" ? 0 : f.type === "select" ? optionValue(f.options[0]) : "");
     });
     return v;
   });
@@ -48,7 +54,7 @@ export default function EntityModal({ title, fields, initialValues, onClose, onS
               <label className={labelClass}>{f.label}</label>
               {f.type === "select" ? (
                 <select value={values[f.key]} onChange={set(f.key)} className={inputClass} required={f.required}>
-                  {f.options.map((opt) => <option key={opt}>{opt}</option>)}
+                  {f.options.map((opt) => <option key={optionValue(opt)} value={optionValue(opt)}>{optionLabel(opt)}</option>)}
                 </select>
               ) : f.type === "file" ? (
                 <input type="file" onChange={set(f.key)} className={inputClass} accept={f.accept} />

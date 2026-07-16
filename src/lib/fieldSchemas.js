@@ -57,10 +57,22 @@ export const ROOM_FIELDS = [
   { key: "name", label: "Room Name", type: "text", required: true, placeholder: "Kitchen, Primary Bath…" },
 ];
 
-export const MATERIAL_FIELDS = [
+// Phase/budget options depend on the project the material belongs to, so
+// this is a function rather than a static array — called with that
+// project's current phases and budget line items each time the modal opens.
+export const getMaterialFields = (phases = [], budgetItems = []) => [
   { key: "item", label: "Item", type: "text", required: true, placeholder: "Countertop, Faucet, Flooring Tile…" },
   { key: "manufacturer", label: "Manufacturer", type: "text" },
   { key: "color", label: "Color / Finish", type: "text" },
   { key: "details", label: "Details", type: "text" },
+  { key: "cost", label: "Cost (optional)", type: "number" },
+  {
+    key: "phaseId", label: "Assign to Phase (optional)", type: "select",
+    options: [{ value: "", label: "— None —" }, ...phases.map((p) => ({ value: p.id, label: p.phase }))],
+  },
+  {
+    key: "budgetItemId", label: "Budget Category (optional)", type: "select",
+    options: [{ value: "", label: "— None —" }, ...budgetItems.map((b) => ({ value: b.id, label: b.category }))],
+  },
   { key: "status", label: "Status", type: "select", required: true, options: ["Selected", "Ordered", "Delivered", "Installed"] },
 ];
