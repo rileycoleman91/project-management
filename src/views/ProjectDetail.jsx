@@ -4,7 +4,7 @@ import {
 } from "recharts";
 import {
   DollarSign, Calendar, ClipboardList, TrendingUp, MapPin, Phone, FileText,
-  Plus, Pencil, Trash2, Download, ExternalLink, Package
+  Plus, Pencil, Trash2, Download, ExternalLink, Package, Loader2
 } from "lucide-react";
 import { useData } from "../data/DataProvider";
 import { useAuth } from "../auth/AuthProvider";
@@ -13,9 +13,12 @@ import { StatCard, StatusBadge, ProgressBar } from "../components/ui";
 import GanttChart from "../components/GanttChart";
 import EntityModal from "../components/EntityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import DropZone from "../components/DropZone";
+import ExtractionReview from "../components/ExtractionReview";
 import { PROJECT_FIELDS, PHASE_FIELDS, BUDGET_FIELDS, PUNCH_FIELDS, DOCUMENT_FIELDS, ROOM_FIELDS, getMaterialFields } from "../lib/fieldSchemas";
 import { fmtMoney, fmtMoneyShort, fmtDate, daysBetween, TODAY, PUNCH_STATUS_CYCLE } from "../lib/format";
 import { exportCsv } from "../lib/csv";
+import { extractDocument } from "../lib/extraction";
 import {
   updateProject,
   createPhase, updatePhase, deletePhase,
@@ -56,10 +59,42 @@ export default function ProjectDetail({ project, back, initialTab }) {
   const [deletingRoom, setDeletingRoom] = useState(null);
   const [materialModal, setMaterialModal] = useState(null);
   const [deletingMaterial, setDeletingMaterial] = useState(null);
+  const [dropLoading, setDropLoading] = useState(false);
+  const [dropError, setDropError] = useState("");
+  const [pendingExtraction, setPendingExtraction] = useState(null);
 
   const cyclePunchStatus = async (item) => {
     await updatePunchlistStatus(item.id, PUNCH_STATUS_CYCLE[item.status]);
     refresh();
+  };
+
+  // The file always gets archived to Documents first, regardless of whether
+  // extraction finds anything usable — extraction is a bonus on top of the
+  // upload, never a replacement for having the source document on hand.
+  const handleDocumentDrop = async (file) => {
+    setDropError("");
+    setDropLoading(true);
+    try {
+      const filePath = await uploadDocumentFile(project.id, file);
+      await createDocument(project.id, {
+        name: file.name,
+        category: "Uploaded",
+        date: new Date().toISOString().slice(0, 10),
+        status: "Current",
+        filePath,
+      });
+      await refresh();
+
+      const extraction = await extractDocument(file);
+      const hasProposals = extraction && (extraction.budgetItems?.length || extraction.teamMembers?.length || extraction.materials?.length);
+      if (hasProposals) {
+        setPendingExtraction(extraction);
+      }
+    } catch (err) {
+      setDropError(err.message || "Something went wrong with that file");
+    } finally {
+      setDropLoading(false);
+    }
   };
 
   return (
@@ -356,6 +391,26 @@ export default function ProjectDetail({ project, back, initialTab }) {
                 </button>
               )}
             </div>
+
+            {canEdit && (
+              dropLoading ? (
+                <div className="border-2 border-dashed border-stone-300 rounded-md p-6 text-center flex flex-col items-center gap-2 f-body text-sm text-stone-500">
+                  <Loader2 size={20} className="animate-spin text-orange-600" />
+                  Uploading and reading document…
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <DropZone
+                    onFile={handleDocumentDrop}
+                    label="Drop a document here to add it and let AI suggest budget/team/material updates"
+                    sublabel="PDF, DOCX, XLSX, or an image — the file is always saved here either way"
+                    accept=".pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg"
+                  />
+                  {dropError && <div className="f-body text-sm text-red-600">{dropError}</div>}
+                </div>
+              )
+            )}
+
             <div className="bg-white border border-stone-200 rounded-md overflow-x-auto">
               {docs.length === 0 ? (
                 <div className="p-8 text-center f-body text-sm text-stone-400">No documents yet.</div>
@@ -696,6 +751,18 @@ export default function ProjectDetail({ project, back, initialTab }) {
           message={`Delete "${deletingMaterial.item}"?`}
           onCancel={() => setDeletingMaterial(null)}
           onConfirm={async () => { await deleteMaterial(deletingMaterial.id); await refresh(); setDeletingMaterial(null); }}
+        />
+      )}
+
+      {pendingExtraction && (
+        <ExtractionReview
+          extraction={pendingExtraction}
+          projectId={project.id}
+          existingBudget={budget}
+          existingTeam={team}
+          existingRooms={projectRooms}
+          onClose={() => setPendingExtraction(null)}
+          onDone={async () => { await refresh(); setPendingExtraction(null); }}
         />
       )}
     </div>

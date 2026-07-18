@@ -38,13 +38,15 @@ In the Supabase SQL editor, run in order:
 6. `supabase/migrations/005_three_tier_roles.sql` — replaces admin/member
    with the three-tier viewer/editor/admin model described below
 
-Also deploy the two edge functions (from the Supabase CLI, or paste each
+Also deploy the edge functions (from the Supabase CLI, or paste each
 `index.ts` into a new Edge Function in the dashboard):
-`supabase functions deploy admin-create-user` and
-`supabase functions deploy admin-update-user`. Neither needs extra
-secrets — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+`admin-create-user`, `admin-update-user`, and `extract-document`. The first
+two need no extra secrets — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
 `SUPABASE_SERVICE_ROLE_KEY` are auto-injected for every edge function in a
-project.
+project. `extract-document` additionally needs an `ANTHROPIC_API_KEY`
+secret (Settings → Edge Functions → Secrets in the Supabase dashboard) —
+without it, document extraction returns a clear "not configured" error
+instead of failing silently.
 
 ## Roles
 
@@ -69,6 +71,25 @@ the service-role key. Share the email/temporary password with the new user
 directly; there's no invite-email flow. Accounts can still be created from
 the Supabase dashboard (**Authentication → Users → Add user**) too, if
 preferred — those also start as Viewer until an admin promotes them.
+
+## AI document extraction
+
+Drag a budget estimate, proposal, or cost sheet onto the New Project modal
+or an existing project's Documents tab. The file is always archived to
+Documents in its original form, whether or not extraction finds anything
+useful. `extract-document` (an edge function) parses the file — PDFs and
+images go to Claude directly, `.docx` is parsed with `mammoth`, `.xlsx`
+with `xlsx` (SheetJS); legacy `.doc` isn't supported (ask for a `.docx`
+re-save) — and asks Claude to return structured project/budget/team/
+material data via forced tool-use, so the response is always valid JSON
+or a clear error, never freeform text to parse.
+
+Nothing gets written automatically. The client shows a review screen
+(`ExtractionReview`) where each proposed item is a checkbox; a budget
+category that collides with one already on the project gets flagged with
+an Overwrite / Add-as-new-line choice per item. Confirmed items go through
+the exact same `create*`/`update*` calls (and RLS policies) as manual
+entry — the extraction function itself never touches the database.
 
 ## Deploying
 

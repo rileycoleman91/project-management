@@ -5,9 +5,10 @@ import { useAuth } from "../auth/AuthProvider";
 import { StatusBadge, ProgressBar } from "../components/ui";
 import EntityModal from "../components/EntityModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import NewProjectFlow from "../components/NewProjectFlow";
 import { PROJECT_FIELDS } from "../lib/fieldSchemas";
 import { fmtDate } from "../lib/format";
-import { createProject, updateProject, deleteProject } from "../lib/api";
+import { updateProject, deleteProject } from "../lib/api";
 
 export default function ProjectsView({ goProject }) {
   const { projects, refresh } = useData();
@@ -24,17 +25,10 @@ export default function ProjectsView({ goProject }) {
     return matchesQ && matchesStatus;
   });
 
-  const handleSubmit = async (values) => {
-    if (modal.mode === "edit") {
-      await updateProject(modal.project.id, values);
-      await refresh();
-      setModal(null);
-    } else {
-      const created = await createProject(values);
-      await refresh();
-      setModal(null);
-      goProject(created.id);
-    }
+  const handleEditSubmit = async (values) => {
+    await updateProject(modal.project.id, values);
+    await refresh();
+    setModal(null);
   };
 
   return (
@@ -117,13 +111,24 @@ export default function ProjectsView({ goProject }) {
         )}
       </div>
 
-      {modal && (
+      {modal?.mode === "new" && (
+        <NewProjectFlow
+          onClose={() => setModal(null)}
+          onCreated={async (id) => {
+            setModal(null);
+            await refresh();
+            goProject(id);
+          }}
+        />
+      )}
+
+      {modal?.mode === "edit" && (
         <EntityModal
-          title={modal.mode === "edit" ? "Edit Project" : "New Project"}
+          title="Edit Project"
           fields={PROJECT_FIELDS}
           initialValues={modal.project}
           onClose={() => setModal(null)}
-          onSubmit={handleSubmit}
+          onSubmit={handleEditSubmit}
         />
       )}
 
