@@ -28,7 +28,7 @@ import {
 
 export default function ProjectDetail({ project, back, initialTab }) {
   const { schedules, budgets, punchlists, documents, teamByProject, team, rooms, materials, materialsByRoom, refresh } = useData();
-  const { isAdmin } = useAuth();
+  const { canEdit } = useAuth();
   const [tab, setTab] = useState(initialTab || "Overview");
   const tabs = ["Overview", "Schedule", "Budget", "Punch List", "Documents", "Materials", "Team"];
   const phases = schedules[project.id] || [];
@@ -69,9 +69,11 @@ export default function ProjectDetail({ project, back, initialTab }) {
         breadcrumb="All Projects"
         onBack={back}
         right={
-          <button onClick={() => setEditingProject(true)} className="flex items-center gap-1.5 f-body text-sm border border-stone-300 text-stone-700 px-3 py-1.5 rounded-md hover:bg-stone-50">
-            <Pencil size={13} /> Edit Project
-          </button>
+          canEdit && (
+            <button onClick={() => setEditingProject(true)} className="flex items-center gap-1.5 f-body text-sm border border-stone-300 text-stone-700 px-3 py-1.5 rounded-md hover:bg-stone-50">
+              <Pencil size={13} /> Edit Project
+            </button>
+          )
         }
       />
       <div className="px-4 sm:px-8 pt-4 sm:pt-5 flex items-center gap-3 sm:gap-4 flex-wrap">
@@ -143,9 +145,11 @@ export default function ProjectDetail({ project, back, initialTab }) {
               >
                 <Download size={13} /> Export
               </button>
-              <button onClick={() => setPhaseModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
-                <Plus size={13} /> Add Phase
-              </button>
+              {canEdit && (
+                <button onClick={() => setPhaseModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+                  <Plus size={13} /> Add Phase
+                </button>
+              )}
             </div>
             {phases.length > 0 && (
               <GanttChart
@@ -176,10 +180,12 @@ export default function ProjectDetail({ project, back, initialTab }) {
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-500">{p.trade}</td>
                         <td className="px-5 py-2.5"><StatusBadge status={p.status} /></td>
                         <td className="px-5 py-2.5">
-                          <div className="flex items-center gap-2 justify-end">
-                            <button onClick={() => setPhaseModal({ mode: "edit", phase: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                            {isAdmin && <button onClick={() => setDeletingPhase(p)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                          </div>
+                          {canEdit && (
+                            <div className="flex items-center gap-2 justify-end">
+                              <button onClick={() => setPhaseModal({ mode: "edit", phase: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                              <button onClick={() => setDeletingPhase(p)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -202,9 +208,11 @@ export default function ProjectDetail({ project, back, initialTab }) {
               >
                 <Download size={13} /> Export
               </button>
-              <button onClick={() => setBudgetModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
-                <Plus size={13} /> Add Line Item
-              </button>
+              {canEdit && (
+                <button onClick={() => setBudgetModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+                  <Plus size={13} /> Add Line Item
+                </button>
+              )}
             </div>
             {budget.length > 0 && (
               <div className="bg-white border border-stone-200 rounded-md p-4 sm:p-5">
@@ -255,10 +263,12 @@ export default function ProjectDetail({ project, back, initialTab }) {
                           {linkedMaterials.length === 0 ? "—" : `${linkedMaterials.length} · ${fmtMoney(materialsCost)}`}
                         </td>
                         <td className="px-5 py-2.5">
-                          <div className="flex items-center gap-2 justify-end">
-                            <button onClick={() => setBudgetModal({ mode: "edit", item: b })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                            {isAdmin && <button onClick={() => setDeletingBudget(b)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                          </div>
+                          {canEdit && (
+                            <div className="flex items-center gap-2 justify-end">
+                              <button onClick={() => setBudgetModal({ mode: "edit", item: b })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                              <button onClick={() => setDeletingBudget(b)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -282,9 +292,11 @@ export default function ProjectDetail({ project, back, initialTab }) {
               >
                 <Download size={13} /> Export
               </button>
-              <button onClick={() => setPunchModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
-                <Plus size={13} /> Add Item
-              </button>
+              {canEdit && (
+                <button onClick={() => setPunchModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+                  <Plus size={13} /> Add Item
+                </button>
+              )}
             </div>
             <div className="bg-white border border-stone-200 rounded-md">
               {punch.length === 0 ? (
@@ -307,12 +319,14 @@ export default function ProjectDetail({ project, back, initialTab }) {
                         <td className="px-5 py-3 f-body text-sm text-stone-800">{p.item}</td>
                         <td className="px-5 py-3 f-body text-xs text-stone-500 hidden sm:table-cell">{p.location}</td>
                         <td className="px-5 py-3 f-mono text-xs text-stone-500 hidden sm:table-cell">{p.trade}</td>
-                        <td className="px-5 py-3"><StatusBadge status={p.status} onClick={() => cyclePunchStatus(p)} /></td>
+                        <td className="px-5 py-3"><StatusBadge status={p.status} onClick={canEdit ? () => cyclePunchStatus(p) : undefined} /></td>
                         <td className="px-5 py-3">
-                          <div className="flex items-center gap-2 justify-end">
-                            <button onClick={() => setPunchModal({ mode: "edit", item: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                            {isAdmin && <button onClick={() => setDeletingPunch(p)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                          </div>
+                          {canEdit && (
+                            <div className="flex items-center gap-2 justify-end">
+                              <button onClick={() => setPunchModal({ mode: "edit", item: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                              <button onClick={() => setDeletingPunch(p)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -336,9 +350,11 @@ export default function ProjectDetail({ project, back, initialTab }) {
               >
                 <Download size={13} /> Export
               </button>
-              <button onClick={() => setDocModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
-                <Plus size={13} /> Add Document
-              </button>
+              {canEdit && (
+                <button onClick={() => setDocModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+                  <Plus size={13} /> Add Document
+                </button>
+              )}
             </div>
             <div className="bg-white border border-stone-200 rounded-md overflow-x-auto">
               {docs.length === 0 ? (
@@ -372,8 +388,12 @@ export default function ProjectDetail({ project, back, initialTab }) {
                               <ExternalLink size={14} />
                             </button>
                           )}
-                          <button onClick={() => setDocModal({ mode: "edit", doc: d })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                          {isAdmin && <button onClick={() => setDeletingDoc(d)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
+                          {canEdit && (
+                            <>
+                              <button onClick={() => setDocModal({ mode: "edit", doc: d })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                              <button onClick={() => setDeletingDoc(d)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -402,9 +422,11 @@ export default function ProjectDetail({ project, back, initialTab }) {
               >
                 <Download size={13} /> Export
               </button>
-              <button onClick={() => setRoomModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
-                <Plus size={13} /> Add Room
-              </button>
+              {canEdit && (
+                <button onClick={() => setRoomModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-1.5 rounded-md hover:bg-orange-700">
+                  <Plus size={13} /> Add Room
+                </button>
+              )}
             </div>
             {projectRooms.length === 0 ? (
               <div className="bg-white border border-stone-200 rounded-md p-8 text-center f-body text-sm text-stone-400">No rooms yet — add a room to start tracking materials.</div>
@@ -418,13 +440,15 @@ export default function ProjectDetail({ project, back, initialTab }) {
                         <Package size={14} className="text-orange-600" />
                         <h3 className="f-display text-sm tracking-wide text-stone-800">{room.name}</h3>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setMaterialModal({ mode: "new", roomId: room.id })} className="flex items-center gap-1.5 f-mono text-[11px] uppercase text-stone-500 hover:text-orange-600">
-                          <Plus size={13} /> Add Material
-                        </button>
-                        <button onClick={() => setRoomModal({ mode: "edit", room })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                        {isAdmin && <button onClick={() => setDeletingRoom(room)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                      </div>
+                      {canEdit && (
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setMaterialModal({ mode: "new", roomId: room.id })} className="flex items-center gap-1.5 f-mono text-[11px] uppercase text-stone-500 hover:text-orange-600">
+                            <Plus size={13} /> Add Material
+                          </button>
+                          <button onClick={() => setRoomModal({ mode: "edit", room })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                          <button onClick={() => setDeletingRoom(room)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                        </div>
+                      )}
                     </div>
                     {roomMaterials.length === 0 ? (
                       <div className="p-6 text-center f-body text-sm text-stone-400">No materials added for this room yet.</div>
@@ -454,10 +478,12 @@ export default function ProjectDetail({ project, back, initialTab }) {
                               <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden md:table-cell">{m.cost != null ? fmtMoney(m.cost) : "—"}</td>
                               <td className="px-5 py-2.5"><StatusBadge status={m.status} /></td>
                               <td className="px-5 py-2.5">
-                                <div className="flex items-center gap-2 justify-end">
-                                  <button onClick={() => setMaterialModal({ mode: "edit", roomId: room.id, material: m })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                                  {isAdmin && <button onClick={() => setDeletingMaterial(m)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
-                                </div>
+                                {canEdit && (
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <button onClick={() => setMaterialModal({ mode: "edit", roomId: room.id, material: m })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                                    <button onClick={() => setDeletingMaterial(m)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -474,19 +500,21 @@ export default function ProjectDetail({ project, back, initialTab }) {
 
         {tab === "Team" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <select value={assignId} onChange={(e) => setAssignId(e.target.value)} className="f-body text-sm border border-stone-300 rounded-md px-3 py-2">
-                <option value="">Assign existing team member…</option>
-                {unassigned.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.role}</option>)}
-              </select>
-              <button
-                disabled={!assignId}
-                onClick={async () => { await assignTeamMember(project.id, assignId); setAssignId(""); refresh(); }}
-                className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-2 rounded-md hover:bg-orange-700 disabled:opacity-40"
-              >
-                <Plus size={13} /> Assign
-              </button>
-            </div>
+            {canEdit && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={assignId} onChange={(e) => setAssignId(e.target.value)} className="f-body text-sm border border-stone-300 rounded-md px-3 py-2">
+                  <option value="">Assign existing team member…</option>
+                  {unassigned.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.role}</option>)}
+                </select>
+                <button
+                  disabled={!assignId}
+                  onClick={async () => { await assignTeamMember(project.id, assignId); setAssignId(""); refresh(); }}
+                  className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3 py-2 rounded-md hover:bg-orange-700 disabled:opacity-40"
+                >
+                  <Plus size={13} /> Assign
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {crew.length === 0 && <div className="f-body text-sm text-stone-400">No team assigned yet.</div>}
               {crew.map((t) => (
@@ -496,7 +524,7 @@ export default function ProjectDetail({ project, back, initialTab }) {
                       <div className="f-display text-base text-stone-900">{t.name}</div>
                       <div className="f-body text-xs text-stone-500">{t.role} · {t.trade}</div>
                     </div>
-                    {isAdmin && (
+                    {canEdit && (
                       <button onClick={async () => { await unassignTeamMember(project.id, t.id); refresh(); }} className="text-stone-400 hover:text-red-600" title="Remove from project">
                         <Trash2 size={14} />
                       </button>

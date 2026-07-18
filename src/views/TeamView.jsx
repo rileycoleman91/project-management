@@ -9,7 +9,7 @@ import { createTeamMember, updateTeamMember, deleteTeamMember } from "../lib/api
 
 export default function TeamView() {
   const { team, teamByProject, projects, refresh } = useData();
-  const { isAdmin } = useAuth();
+  const { canEdit } = useAuth();
   const [filter, setFilter] = useState("All");
   const [modal, setModal] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -46,9 +46,11 @@ export default function TeamView() {
             </button>
           ))}
         </div>
-        <button onClick={() => setModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3.5 py-2 rounded-md hover:bg-orange-700 whitespace-nowrap">
-          <Plus size={15} /> Add Member
-        </button>
+        {canEdit && (
+          <button onClick={() => setModal({ mode: "new" })} className="flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3.5 py-2 rounded-md hover:bg-orange-700 whitespace-nowrap">
+            <Plus size={15} /> Add Member
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((t) => (
@@ -60,8 +62,12 @@ export default function TeamView() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="f-mono text-[10px] uppercase text-stone-400 border border-stone-200 rounded px-1.5 py-0.5">{t.trade}</span>
-                <button onClick={() => setModal({ mode: "edit", member: t })} className="text-stone-400 hover:text-orange-600"><Pencil size={13} /></button>
-                {isAdmin && <button onClick={() => setDeleting(t)} className="text-stone-400 hover:text-red-600"><Trash2 size={13} /></button>}
+                {canEdit && (
+                  <>
+                    <button onClick={() => setModal({ mode: "edit", member: t })} className="text-stone-400 hover:text-orange-600"><Pencil size={13} /></button>
+                    <button onClick={() => setDeleting(t)} className="text-stone-400 hover:text-red-600"><Trash2 size={13} /></button>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1.5 mt-3 f-body text-xs text-stone-600">

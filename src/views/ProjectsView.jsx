@@ -11,7 +11,7 @@ import { createProject, updateProject, deleteProject } from "../lib/api";
 
 export default function ProjectsView({ goProject }) {
   const { projects, refresh } = useData();
-  const { isAdmin } = useAuth();
+  const { canEdit } = useAuth();
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [modal, setModal] = useState(null); // { mode: 'new' | 'edit', project? }
@@ -57,9 +57,11 @@ export default function ProjectsView({ goProject }) {
           >
             {statuses.map((s) => <option key={s}>{s}</option>)}
           </select>
-          <button onClick={() => setModal({ mode: "new" })} className="sm:ml-auto flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3.5 py-2 rounded-md hover:bg-orange-700 whitespace-nowrap">
-            <Plus size={15} /> <span className="hidden xs:inline sm:inline">New Project</span>
-          </button>
+          {canEdit && (
+            <button onClick={() => setModal({ mode: "new" })} className="sm:ml-auto flex items-center gap-1.5 f-body text-sm bg-orange-600 text-white px-3.5 py-2 rounded-md hover:bg-orange-700 whitespace-nowrap">
+              <Plus size={15} /> <span className="hidden xs:inline sm:inline">New Project</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -76,8 +78,12 @@ export default function ProjectsView({ goProject }) {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <StatusBadge status={p.status} />
-                <button onClick={() => setModal({ mode: "edit", project: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
-                {isAdmin && <button onClick={() => setDeleting(p)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>}
+                {canEdit && (
+                  <>
+                    <button onClick={() => setModal({ mode: "edit", project: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>
+                    <button onClick={() => setDeleting(p)} className="text-stone-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1.5 mt-3 f-body text-xs text-stone-500 cursor-pointer" onClick={() => goProject(p.id)}>

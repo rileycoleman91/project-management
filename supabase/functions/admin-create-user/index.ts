@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
     if (password.length < 8) {
       return json({ error: 'Password must be at least 8 characters' }, 400)
     }
-    if (role && !['admin', 'member'].includes(role)) {
+    if (role && !['admin', 'editor', 'viewer'].includes(role)) {
       return json({ error: 'Invalid role' }, 400)
     }
 
@@ -81,13 +81,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // The handle_new_user trigger already created the profile row with
-    // role='member' — update it if a full name or non-default role was requested.
-    if (fullName || (role && role !== 'member')) {
-      await adminClient
-        .from('profiles')
-        .update({ full_name: fullName || null, role: role || 'member' })
-        .eq('id', created.user.id)
-    }
+    // role='viewer' — apply the requested full name / role on top of that.
+    await adminClient
+      .from('profiles')
+      .update({ full_name: fullName || null, role: role || 'viewer' })
+      .eq('id', created.user.id)
 
     return json({ id: created.user.id, email: created.user.email })
   } catch (err) {

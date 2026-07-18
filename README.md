@@ -35,6 +35,8 @@ In the Supabase SQL editor, run in order:
    tracking, scoped per room per project
 5. `supabase/migrations/004_materials_phase_and_budget_links.sql` — optional
    phase/budget-category links + cost on materials
+6. `supabase/migrations/005_three_tier_roles.sql` — replaces admin/member
+   with the three-tier viewer/editor/admin model described below
 
 Also deploy the edge function (from the Supabase CLI, or paste
 `supabase/functions/admin-create-user/index.ts` into a new Edge Function in
@@ -45,10 +47,17 @@ project.
 
 ## Roles
 
-Every signed-in user can view, add, and edit everything. Only **admins** can
-delete records or promote/demote other users' roles (Admin nav item, visible
-to admins only). The first user that existed when migration 002 ran was
-bootstrapped as admin; promote anyone else from that Admin page.
+Three tiers, each including everything the tier below it can do:
+
+- **Viewer** — read-only. Add/edit/delete controls don't render for them,
+  and it's enforced server-side too (RLS), not just hidden in the UI.
+- **Editor** — full add/edit/delete on all project content (projects,
+  schedules, budgets, punch lists, documents, materials, team). Cannot
+  create users or change anyone's role.
+- **Admin** — everything Editor can do, plus the Admin page: creating staff
+  accounts and promoting/demoting roles.
+
+New accounts start as Viewer by default; promote them from the Admin page.
 
 ## Creating logins
 
@@ -58,7 +67,7 @@ Admins can create staff accounts directly from the in-app **Admin** page
 the service-role key. Share the email/temporary password with the new user
 directly; there's no invite-email flow. Accounts can still be created from
 the Supabase dashboard (**Authentication → Users → Add user**) too, if
-preferred — those start as Member until an admin promotes them.
+preferred — those also start as Viewer until an admin promotes them.
 
 ## Deploying
 

@@ -57,11 +57,19 @@ export const ROOM_FIELDS = [
   { key: "name", label: "Room Name", type: "text", required: true, placeholder: "Kitchen, Primary Bath…" },
 ];
 
+// Three tiers: viewer (read-only), editor (add/edit/delete content, no user
+// management), admin (everything, including creating users and roles).
+export const ROLE_OPTIONS = [
+  { value: "viewer", label: "Viewer — view only" },
+  { value: "editor", label: "Editor — add/edit/delete content" },
+  { value: "admin", label: "Admin — also manages users & roles" },
+];
+
 export const NEW_USER_FIELDS = [
   { key: "email", label: "Email", type: "email", required: true },
   { key: "password", label: "Temporary Password", type: "password", required: true, placeholder: "At least 8 characters" },
   { key: "fullName", label: "Full Name", type: "text" },
-  { key: "role", label: "Role", type: "select", required: true, options: ["member", "admin"] },
+  { key: "role", label: "Role", type: "select", required: true, options: ROLE_OPTIONS },
 ];
 
 // Phase/budget options depend on the project the material belongs to, so

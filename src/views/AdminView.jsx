@@ -3,7 +3,7 @@ import { ShieldCheck, Plus } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { listProfiles, updateProfileRole, createUser } from "../lib/api";
 import EntityModal from "../components/EntityModal";
-import { NEW_USER_FIELDS } from "../lib/fieldSchemas";
+import { NEW_USER_FIELDS, ROLE_OPTIONS } from "../lib/fieldSchemas";
 
 export default function AdminView() {
   const { profile: myProfile } = useAuth();
@@ -60,8 +60,7 @@ export default function AdminView() {
                   onChange={(e) => handleRoleChange(p.id, e.target.value)}
                   className="f-body text-sm border border-stone-300 rounded-md px-2 py-1.5 disabled:opacity-50"
                 >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
+                  {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
             ))}

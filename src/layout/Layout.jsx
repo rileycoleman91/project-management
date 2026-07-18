@@ -6,6 +6,8 @@ import {
 import { useAuth } from "../auth/AuthProvider";
 import { TODAY } from "../lib/format";
 
+const ROLE_LABEL = { admin: "Admin", editor: "Editor", viewer: "Viewer" };
+
 export const NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "projects", label: "Projects", icon: Building2 },
@@ -17,8 +19,9 @@ export const NAV_ITEMS = [
 ];
 
 export function Sidebar({ view, setView, setSelectedProject }) {
-  const { session, signOut, isAdmin } = useAuth();
+  const { session, profile, signOut, isAdmin, role } = useAuth();
   const items = isAdmin ? [...NAV_ITEMS, { key: "admin", label: "Admin", icon: ShieldCheck }] : NAV_ITEMS;
+  const displayName = profile?.fullName || session?.user?.email;
   return (
     <div className="hidden sm:flex w-56 shrink-0 bg-stone-900 text-stone-300 flex-col h-full">
       <div className="flex items-center gap-2 px-5 py-5 border-b border-stone-800">
@@ -46,7 +49,7 @@ export function Sidebar({ view, setView, setSelectedProject }) {
       </nav>
       <div className="px-5 py-4 border-t border-stone-800">
         <div className="f-mono text-[10px] text-stone-500 uppercase tracking-wide truncate mb-2">
-          {session?.user?.email} {isAdmin && <span className="text-orange-500">· Admin</span>}
+          {displayName} {role && <span className="text-orange-500">· {ROLE_LABEL[role]}</span>}
         </div>
         <button onClick={signOut} className="flex items-center gap-1.5 f-body text-xs text-stone-400 hover:text-white">
           <LogOut size={13} /> Sign Out

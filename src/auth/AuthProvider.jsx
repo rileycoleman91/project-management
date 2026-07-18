@@ -42,7 +42,10 @@ export function AuthProvider({ children }) {
         session,
         loading: session === undefined || (session && profile === undefined),
         profile,
+        role: profile?.role,
         isAdmin: profile?.role === "admin",
+        // Editors and admins can add/edit/delete content; viewers can only read.
+        canEdit: profile?.role === "admin" || profile?.role === "editor",
         signIn,
         signOut,
       }}
