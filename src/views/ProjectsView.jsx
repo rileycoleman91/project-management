@@ -71,7 +71,11 @@ export default function ProjectsView({ goProject }) {
                 <div className="f-body text-xs text-stone-500">{p.type}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <StatusBadge status={p.status} />
+                <StatusBadge
+                  status={p.status}
+                  options={canEdit ? PROJECT_FIELDS.find((f) => f.key === "status")?.options : undefined}
+                  onChange={canEdit ? (status) => updateProject(p.id, { status }).then(refresh) : undefined}
+                />
                 {canEdit && (
                   <>
                     <button onClick={() => setModal({ mode: "edit", project: p })} className="text-stone-400 hover:text-orange-600"><Pencil size={14} /></button>

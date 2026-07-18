@@ -1,13 +1,54 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { statusStyle } from "../lib/format";
 
-export function StatusBadge({ status, onClick }) {
-  return (
+// Renders exactly like a plain status badge. Pass `options` + `onChange`
+// (typically gated behind canEdit at the call site) to make it clickable —
+// it opens a small dropdown of the other valid statuses in place, so you
+// don't have to open the full edit modal just to change one field.
+export function StatusBadge({ status, options, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const interactive = Boolean(options?.length && onChange);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const badge = (
     <span
-      onClick={onClick}
-      className={`f-mono inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wide px-2 py-1 rounded border ${statusStyle(status)} ${onClick ? "cursor-pointer" : ""}`}
+      onClick={interactive ? (e) => { e.stopPropagation(); setOpen((o) => !o); } : undefined}
+      className={`f-mono inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wide px-2 py-1 rounded border ${statusStyle(status)} ${interactive ? "cursor-pointer" : ""}`}
     >
       {status}
+    </span>
+  );
+
+  if (!interactive) return badge;
+
+  return (
+    <span ref={ref} className="relative inline-block">
+      {badge}
+      {open && (
+        <div className="absolute z-30 mt-1 min-w-[130px] bg-white border border-stone-200 rounded-md shadow-lg py-1">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                if (opt !== status) onChange(opt);
+              }}
+              className={`w-full text-left px-3 py-1.5 f-mono text-[11px] uppercase tracking-wide hover:bg-stone-50 ${opt === status ? "text-stone-900 font-medium" : "text-stone-500"}`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
     </span>
   );
 }

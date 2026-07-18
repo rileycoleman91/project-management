@@ -16,7 +16,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import DropZone from "../components/DropZone";
 import ExtractionReview from "../components/ExtractionReview";
 import { PROJECT_FIELDS, PHASE_FIELDS, BUDGET_FIELDS, PUNCH_FIELDS, DOCUMENT_FIELDS, ROOM_FIELDS, getMaterialFields } from "../lib/fieldSchemas";
-import { fmtMoney, fmtMoneyShort, fmtDate, daysBetween, TODAY, PUNCH_STATUS_CYCLE } from "../lib/format";
+import { fmtMoney, fmtMoneyShort, fmtDate, daysBetween, TODAY } from "../lib/format";
 import { exportCsv } from "../lib/csv";
 import { extractDocument } from "../lib/extraction";
 import {
@@ -28,6 +28,10 @@ import {
   assignTeamMember, unassignTeamMember,
   createRoom, updateRoom, deleteRoom, createMaterial, updateMaterial, deleteMaterial,
 } from "../lib/api";
+
+// Pulls the option list off a field-schema's "status" entry, so the inline
+// status dropdowns below always match what the full edit modal offers.
+const statusOptions = (fields) => fields.find((f) => f.key === "status")?.options || [];
 
 export default function ProjectDetail({ project, back, initialTab, onTabChange }) {
   const { schedules, budgets, punchlists, documents, teamByProject, team, rooms, materials, materialsByRoom, refresh } = useData();
@@ -63,11 +67,6 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
   const [dropError, setDropError] = useState("");
   const [pendingExtraction, setPendingExtraction] = useState(null);
   const [pendingSourceFile, setPendingSourceFile] = useState(null);
-
-  const cyclePunchStatus = async (item) => {
-    await updatePunchlistStatus(item.id, PUNCH_STATUS_CYCLE[item.status]);
-    refresh();
-  };
 
   // The file always gets archived to Documents first, regardless of whether
   // extraction finds anything usable — extraction is a bonus on top of the
@@ -114,7 +113,11 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
         }
       />
       <div className="px-4 sm:px-8 pt-4 sm:pt-5 flex items-center gap-3 sm:gap-4 flex-wrap">
-        <StatusBadge status={project.status} />
+        <StatusBadge
+          status={project.status}
+          options={canEdit ? statusOptions(PROJECT_FIELDS) : undefined}
+          onChange={canEdit ? (status) => updateProject(project.id, { status }).then(refresh) : undefined}
+        />
         <span className="f-body text-sm text-stone-500 flex items-center gap-1"><MapPin size={13} />{project.address}</span>
         <span className="f-body text-sm text-stone-500">Client: {project.client}</span>
         <span className="f-body text-sm text-stone-500 hidden sm:inline">PM: {project.pm}</span>
@@ -158,7 +161,11 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
                     <span className="f-body text-sm text-stone-700">{p.phase}</span>
                     <div className="flex items-center gap-3">
                       <span className="f-mono text-xs text-stone-400">{fmtDate(p.start)} – {fmtDate(p.end)}</span>
-                      <StatusBadge status={p.status} />
+                      <StatusBadge
+                        status={p.status}
+                        options={canEdit ? statusOptions(PHASE_FIELDS) : undefined}
+                        onChange={canEdit ? (status) => updatePhase(p.id, project.id, { status }).then(refresh) : undefined}
+                      />
                     </div>
                   </div>
                 ))}
@@ -215,7 +222,13 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
                         <td className="px-5 py-2.5 f-body text-sm text-stone-800">{p.phase}</td>
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-500">{fmtDate(p.start)} – {fmtDate(p.end)}</td>
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-500">{p.trade}</td>
-                        <td className="px-5 py-2.5"><StatusBadge status={p.status} /></td>
+                        <td className="px-5 py-2.5">
+                          <StatusBadge
+                            status={p.status}
+                            options={canEdit ? statusOptions(PHASE_FIELDS) : undefined}
+                            onChange={canEdit ? (status) => updatePhase(p.id, project.id, { status }).then(refresh) : undefined}
+                          />
+                        </td>
                         <td className="px-5 py-2.5">
                           {canEdit && (
                             <div className="flex items-center gap-2 justify-end">
@@ -359,7 +372,13 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
                         <td className="px-5 py-3 f-body text-sm text-stone-800">{p.item}</td>
                         <td className="px-5 py-3 f-body text-xs text-stone-500 hidden sm:table-cell">{p.location}</td>
                         <td className="px-5 py-3 f-mono text-xs text-stone-500 hidden sm:table-cell">{p.trade}</td>
-                        <td className="px-5 py-3"><StatusBadge status={p.status} onClick={canEdit ? () => cyclePunchStatus(p) : undefined} /></td>
+                        <td className="px-5 py-3">
+                          <StatusBadge
+                            status={p.status}
+                            options={canEdit ? statusOptions(PUNCH_FIELDS) : undefined}
+                            onChange={canEdit ? (status) => updatePunchlistStatus(p.id, status).then(refresh) : undefined}
+                          />
+                        </td>
                         <td className="px-5 py-3">
                           {canEdit && (
                             <div className="flex items-center gap-2 justify-end">
@@ -436,7 +455,13 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
                       <td className="px-5 py-3 f-body text-sm text-stone-800"><span className="flex items-center gap-2"><FileText size={14} className="text-stone-400 shrink-0" />{d.name}</span></td>
                       <td className="px-5 py-3 f-mono text-xs text-stone-500 hidden sm:table-cell">{d.category}</td>
                       <td className="px-5 py-3 f-mono text-xs text-stone-500 hidden sm:table-cell">{fmtDate(d.date)}</td>
-                      <td className="px-5 py-3"><StatusBadge status={d.status} /></td>
+                      <td className="px-5 py-3">
+                        <StatusBadge
+                          status={d.status}
+                          options={canEdit ? statusOptions(DOCUMENT_FIELDS) : undefined}
+                          onChange={canEdit ? (status) => updateDocument(d.id, project.id, { status }).then(refresh) : undefined}
+                        />
+                      </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2 justify-end">
                           {d.filePath && (
@@ -536,7 +561,13 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
                               <td className="px-5 py-2.5 f-body text-xs text-stone-500 hidden sm:table-cell">{m.details}</td>
                               <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden md:table-cell">{phases.find((p) => p.id === m.phaseId)?.phase || "—"}</td>
                               <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden md:table-cell">{m.cost != null ? fmtMoney(m.cost) : "—"}</td>
-                              <td className="px-5 py-2.5"><StatusBadge status={m.status} /></td>
+                              <td className="px-5 py-2.5">
+                                <StatusBadge
+                                  status={m.status}
+                                  options={canEdit ? statusOptions(getMaterialFields(phases, budget)) : undefined}
+                                  onChange={canEdit ? (status) => updateMaterial(m.id, project.id, m.roomId, { status }).then(refresh) : undefined}
+                                />
+                              </td>
                               <td className="px-5 py-2.5">
                                 {canEdit && (
                                   <div className="flex items-center gap-2 justify-end">
