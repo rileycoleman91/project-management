@@ -1,10 +1,12 @@
 import React from "react";
+import { NavLink, Link } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Calendar, DollarSign, Users, BarChart3,
   ArrowLeft, HardHat, LogOut, ShieldCheck, Package
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { TODAY } from "../lib/format";
+import { VIEW_PATHS } from "../lib/routes";
 
 const ROLE_LABEL = { admin: "Admin", editor: "Editor", viewer: "Viewer" };
 
@@ -18,7 +20,7 @@ export const NAV_ITEMS = [
   { key: "reports", label: "Reports", icon: BarChart3 },
 ];
 
-export function Sidebar({ view, setView, setSelectedProject }) {
+export function Sidebar() {
   const { session, profile, signOut, isAdmin, role } = useAuth();
   const items = isAdmin ? [...NAV_ITEMS, { key: "admin", label: "Admin", icon: ShieldCheck }] : NAV_ITEMS;
   const displayName = profile?.fullName || session?.user?.email;
@@ -31,21 +33,21 @@ export function Sidebar({ view, setView, setSelectedProject }) {
         <div className="f-display text-lg tracking-wide text-white leading-none">SITELINE</div>
       </div>
       <nav className="flex-1 py-4">
-        {items.map((it) => {
-          const active = view === it.key;
-          return (
-            <button
-              key={it.key}
-              onClick={() => { setView(it.key); setSelectedProject(null); }}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 f-body text-sm transition-colors ${
-                active ? "bg-stone-800 text-white border-l-2 border-orange-600" : "border-l-2 border-transparent hover:bg-stone-800/60 hover:text-white"
-              }`}
-            >
-              <it.icon size={16} />
-              {it.label}
-            </button>
-          );
-        })}
+        {items.map((it) => (
+          <NavLink
+            key={it.key}
+            to={VIEW_PATHS[it.key]}
+            end={it.key === "dashboard"}
+            className={({ isActive }) =>
+              `w-full flex items-center gap-3 px-5 py-2.5 f-body text-sm transition-colors ${
+                isActive ? "bg-stone-800 text-white border-l-2 border-orange-600" : "border-l-2 border-transparent hover:bg-stone-800/60 hover:text-white"
+              }`
+            }
+          >
+            <it.icon size={16} />
+            {it.label}
+          </NavLink>
+        ))}
       </nav>
       <div className="px-5 py-4 border-t border-stone-800">
         <div className="f-mono text-[10px] text-stone-500 uppercase tracking-wide truncate mb-2">
@@ -59,16 +61,16 @@ export function Sidebar({ view, setView, setSelectedProject }) {
   );
 }
 
-export function MobileTopBar({ onSelectHome }) {
+export function MobileTopBar() {
   const { signOut } = useAuth();
   return (
     <div className="sm:hidden flex items-center justify-between gap-2 px-4 py-3 bg-stone-900 border-b border-stone-800 shrink-0">
-      <button onClick={onSelectHome} className="flex items-center gap-2">
+      <Link to="/" className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-sm bg-orange-600 flex items-center justify-center shrink-0">
           <HardHat size={15} className="text-white" />
         </div>
         <div className="f-display text-base tracking-wide text-white leading-none">SITELINE</div>
-      </button>
+      </Link>
       <button onClick={signOut} className="text-stone-400 hover:text-white">
         <LogOut size={16} />
       </button>
@@ -76,24 +78,24 @@ export function MobileTopBar({ onSelectHome }) {
   );
 }
 
-export function BottomNav({ view, setView, setSelectedProject }) {
+export function BottomNav() {
   const { isAdmin } = useAuth();
   const items = isAdmin ? [...NAV_ITEMS, { key: "admin", label: "Admin", icon: ShieldCheck }] : NAV_ITEMS;
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 z-20 bg-stone-900 border-t border-stone-800 flex overflow-x-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      {items.map((it) => {
-        const active = view === it.key;
-        return (
-          <button
-            key={it.key}
-            onClick={() => { setView(it.key); setSelectedProject(null); }}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2 f-mono text-[10px] uppercase tracking-wide shrink-0 min-w-[60px] ${active ? "text-orange-500" : "text-stone-500"}`}
-          >
-            <it.icon size={18} />
-            {it.label}
-          </button>
-        );
-      })}
+      {items.map((it) => (
+        <NavLink
+          key={it.key}
+          to={VIEW_PATHS[it.key]}
+          end={it.key === "dashboard"}
+          className={({ isActive }) =>
+            `flex-1 flex flex-col items-center gap-0.5 py-2 f-mono text-[10px] uppercase tracking-wide shrink-0 min-w-[60px] ${isActive ? "text-orange-500" : "text-stone-500"}`
+          }
+        >
+          <it.icon size={18} />
+          {it.label}
+        </NavLink>
+      ))}
     </div>
   );
 }

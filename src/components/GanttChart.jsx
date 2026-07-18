@@ -13,20 +13,33 @@ export default function GanttChart({ rows, rangeStart, rangeEnd, onRowClick }) {
     months.push(new Date(cursor));
     cursor.setMonth(cursor.getMonth() + 1);
   }
+  // Give every month column enough room for its label so they never overlap,
+  // and only repeat the year when it actually changes (Jun, Jul, Aug … Jan '27)
+  // instead of stamping it on every single label.
+  const MONTH_COL_WIDTH = 76;
+  const chartWidth = Math.max(640, months.length * MONTH_COL_WIDTH);
 
   return (
     <div className="bg-white border border-stone-200 rounded-md overflow-x-auto">
-      <div className="min-w-[640px]">
+      <div style={{ minWidth: chartWidth }}>
       <div className="relative border-b border-stone-200 bg-stone-50" style={{ height: 32 }}>
-        {months.map((m, i) => (
-          <div
-            key={i}
-            className="absolute top-0 bottom-0 border-l border-stone-200 f-mono text-[10px] text-stone-500 pl-1.5 pt-2 uppercase"
-            style={{ left: `${pct(m.toISOString().slice(0, 10))}%` }}
-          >
-            {m.toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+        {months.map((m, i) => {
+          const showYear = i === 0 || m.getFullYear() !== months[i - 1].getFullYear();
+          return (
+            <div
+              key={i}
+              className="absolute top-0 bottom-0 border-l border-stone-200 f-mono text-[10px] text-stone-500 pl-1.5 pt-2 uppercase whitespace-nowrap"
+              style={{ left: `${pct(m.toISOString().slice(0, 10))}%` }}
+            >
+              {m.toLocaleDateString("en-US", showYear ? { month: "short", year: "2-digit" } : { month: "short" })}
+            </div>
+          );
+        })}
+        {todayPct >= 0 && todayPct <= 100 && (
+          <div className="absolute top-0 bottom-0 border-l-2 border-orange-500 z-10" style={{ left: `${todayPct}%` }}>
+            <div className="f-mono text-[9px] uppercase text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 -translate-x-1/2 mt-1 whitespace-nowrap">Today</div>
           </div>
-        ))}
+        )}
       </div>
       <div className="relative">
         <div className="absolute inset-0 pointer-events-none">
@@ -34,9 +47,7 @@ export default function GanttChart({ rows, rangeStart, rangeEnd, onRowClick }) {
             <div key={i} className="absolute top-0 bottom-0 border-l border-blue-100" style={{ left: `${pct(m.toISOString().slice(0, 10))}%` }} />
           ))}
           {todayPct >= 0 && todayPct <= 100 && (
-            <div className="absolute top-0 bottom-0 border-l-2 border-orange-500" style={{ left: `${todayPct}%` }}>
-              <div className="f-mono text-[9px] uppercase text-orange-600 bg-orange-50 border border-orange-200 rounded px-1 -translate-x-1/2 mt-1">Today</div>
-            </div>
+            <div className="absolute top-0 bottom-0 border-l-2 border-orange-500" style={{ left: `${todayPct}%` }} />
           )}
         </div>
         {rows.map((row, i) => {

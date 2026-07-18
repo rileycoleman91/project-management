@@ -29,7 +29,7 @@ import {
   createRoom, updateRoom, deleteRoom, createMaterial, updateMaterial, deleteMaterial,
 } from "../lib/api";
 
-export default function ProjectDetail({ project, back, initialTab }) {
+export default function ProjectDetail({ project, back, initialTab, onTabChange }) {
   const { schedules, budgets, punchlists, documents, teamByProject, team, rooms, materials, materialsByRoom, refresh } = useData();
   const { canEdit } = useAuth();
   const [tab, setTab] = useState(initialTab || "Overview");
@@ -125,7 +125,7 @@ export default function ProjectDetail({ project, back, initialTab }) {
         {tabs.map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => { setTab(t); onTabChange?.(t); }}
             className={`shrink-0 f-body text-sm px-3 sm:px-4 py-2.5 border-b-2 -mb-px whitespace-nowrap ${tab === t ? "border-orange-600 text-stone-900 font-medium" : "border-transparent text-stone-500 hover:text-stone-700"}`}
           >
             {t}
@@ -511,17 +511,17 @@ export default function ProjectDetail({ project, back, initialTab }) {
                       <div className="p-6 text-center f-body text-sm text-stone-400">No materials added for this room yet.</div>
                     ) : (
                       <div className="overflow-x-auto">
-                      <table className="w-full min-w-[720px]">
+                      <table className="w-full min-w-[720px] table-fixed">
                         <thead>
                           <tr className="f-mono text-[10px] uppercase tracking-wide text-stone-400 border-b border-stone-100">
-                            <td className="px-5 py-2">Item</td>
-                            <td className="px-5 py-2">Manufacturer</td>
-                            <td className="px-5 py-2">Color</td>
-                            <td className="px-5 py-2 hidden sm:table-cell">Details</td>
-                            <td className="px-5 py-2 hidden md:table-cell">Phase</td>
-                            <td className="px-5 py-2 hidden md:table-cell">Cost</td>
-                            <td className="px-5 py-2">Status</td>
-                            <td className="px-5 py-2"></td>
+                            <td className="px-5 py-2 w-[15%]">Item</td>
+                            <td className="px-5 py-2 w-[13%]">Manufacturer</td>
+                            <td className="px-5 py-2 w-[9%]">Color</td>
+                            <td className="px-5 py-2 w-[28%] hidden sm:table-cell">Details</td>
+                            <td className="px-5 py-2 w-[9%] hidden md:table-cell">Phase</td>
+                            <td className="px-5 py-2 w-[9%] hidden md:table-cell">Cost</td>
+                            <td className="px-5 py-2 w-[9%]">Status</td>
+                            <td className="px-5 py-2 w-[8%]"></td>
                           </tr>
                         </thead>
                         <tbody>
