@@ -84,12 +84,12 @@ const EXTRACTION_TOOL = {
             item: { type: 'string' },
             manufacturer: { type: 'string' },
             color: { type: 'string' },
-            details: { type: 'string' },
+            details: { type: 'string', description: 'Every spec/scope detail from the document tied to this item, not just the headline manufacturer/model - quantities, sub-components, placement, and related instructions mentioned nearby (e.g. thermostat count, venting, dehumidification), written as a plain-text list.' },
           },
           required: ['room', 'item'],
         },
       },
-      notes: { type: 'string', description: 'Brief notes on anything ambiguous or uncertain in the extraction, for a human reviewer.' },
+      notes: { type: 'string', description: 'Anything from the document that does not fit a budget item, team member, or material - allowances, permit requirements, general scope notes - so nothing found in the document is silently lost. Also flag anything uncertain in the extraction itself.' },
     },
   },
 }
@@ -97,12 +97,14 @@ const EXTRACTION_TOOL = {
 const PROMPT = `You are extracting structured data from a construction project document (a budget estimate, proposal, cost breakdown, or similar) so it can pre-fill a construction project management app. Use the record_extraction tool to report what you find.
 
 Guidelines:
+- Be exhaustive, not just headline-level. If a section lists several distinct facts (equipment specs, quantities, venting, allowances, permits), capture every one of them - never silently drop a line item just because it has no field of its own.
+- For each material, put every spec/scope detail mentioned for that item into "details" (not only the headline manufacturer/model) - e.g. include thermostat counts, venting instructions, dehumidification, and other specifics tied to that item.
+- Anything that doesn't belong to a specific budget item, team member, or material - allowances, permit requirements, general scope notes - goes in the top-level "notes" field so a human reviewer still sees it, even though nothing gets auto-created from it.
 - Only include fields/items you are reasonably confident about. Omit anything unclear rather than guessing.
 - For budgetItems, extract totals at the category/division level, not individual line items within a category.
 - Dollar amounts should be plain numbers with no $ or commas.
 - Dates should be YYYY-MM-DD when determinable.
-- For teamMembers, "type" should be "Staff" for the contractor's own team/PM and "Subcontractor" for outside trade companies.
-- Use the "notes" field to flag anything ambiguous for a human reviewer.`
+- For teamMembers, "type" should be "Staff" for the contractor's own team/PM and "Subcontractor" for outside trade companies.`
 
 async function parseFile(filename: string, mimeType: string, bytes: Uint8Array) {
   const ext = filename.toLowerCase().split('.').pop() || ''

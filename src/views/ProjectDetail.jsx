@@ -62,6 +62,7 @@ export default function ProjectDetail({ project, back, initialTab }) {
   const [dropLoading, setDropLoading] = useState(false);
   const [dropError, setDropError] = useState("");
   const [pendingExtraction, setPendingExtraction] = useState(null);
+  const [pendingSourceFile, setPendingSourceFile] = useState(null);
 
   const cyclePunchStatus = async (item) => {
     await updatePunchlistStatus(item.id, PUNCH_STATUS_CYCLE[item.status]);
@@ -89,6 +90,7 @@ export default function ProjectDetail({ project, back, initialTab }) {
       const hasProposals = extraction && (extraction.budgetItems?.length || extraction.teamMembers?.length || extraction.materials?.length);
       if (hasProposals) {
         setPendingExtraction(extraction);
+        setPendingSourceFile(file);
       }
     } catch (err) {
       setDropError(err.message || "Something went wrong with that file");
@@ -757,12 +759,13 @@ export default function ProjectDetail({ project, back, initialTab }) {
       {pendingExtraction && (
         <ExtractionReview
           extraction={pendingExtraction}
+          sourceFile={pendingSourceFile}
           projectId={project.id}
           existingBudget={budget}
           existingTeam={team}
           existingRooms={projectRooms}
-          onClose={() => setPendingExtraction(null)}
-          onDone={async () => { await refresh(); setPendingExtraction(null); }}
+          onClose={() => { setPendingExtraction(null); setPendingSourceFile(null); }}
+          onDone={async () => { await refresh(); setPendingExtraction(null); setPendingSourceFile(null); }}
         />
       )}
     </div>
