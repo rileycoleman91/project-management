@@ -393,6 +393,20 @@ export async function createUser({ email, password, fullName, role }) {
   return data;
 }
 
+// Editing email also has to go through the service role (it updates the
+// real auth.users record), so this uses the same edge-function pattern.
+export async function updateUser(id, { email, fullName }) {
+  const { data, error } = await supabase.functions.invoke("admin-update-user", {
+    body: { userId: id, email, fullName },
+  });
+  if (error) {
+    const message = (await error.context?.json?.().catch(() => null))?.error || error.message;
+    throw new Error(message);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 /* ---------------------------------------------------------------
    ROOMS + MATERIALS
 --------------------------------------------------------------- */

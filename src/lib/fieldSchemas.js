@@ -72,6 +72,11 @@ export const NEW_USER_FIELDS = [
   { key: "role", label: "Role", type: "select", required: true, options: ROLE_OPTIONS },
 ];
 
+export const EDIT_USER_FIELDS = [
+  { key: "email", label: "Email", type: "email", required: true },
+  { key: "fullName", label: "Full Name", type: "text" },
+];
+
 // Phase/budget options depend on the project the material belongs to, so
 // this is a function rather than a static array — called with that
 // project's current phases and budget line items each time the modal opens.

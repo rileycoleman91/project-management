@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { ShieldCheck, Plus } from "lucide-react";
+import { ShieldCheck, Plus, Pencil } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { listProfiles, updateProfileRole, createUser } from "../lib/api";
+import { listProfiles, updateProfileRole, createUser, updateUser } from "../lib/api";
 import EntityModal from "../components/EntityModal";
-import { NEW_USER_FIELDS, ROLE_OPTIONS } from "../lib/fieldSchemas";
+import { NEW_USER_FIELDS, EDIT_USER_FIELDS, ROLE_OPTIONS } from "../lib/fieldSchemas";
 
 export default function AdminView() {
   const { profile: myProfile } = useAuth();
   const [profiles, setProfiles] = useState(null);
   const [error, setError] = useState("");
   const [newUserModal, setNewUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   const load = async () => {
     try {
@@ -54,14 +55,19 @@ export default function AdminView() {
                   <div className="f-body text-sm text-stone-800 truncate">{p.fullName || p.email}</div>
                   <div className="f-mono text-[11px] text-stone-400 truncate">{p.email}</div>
                 </div>
-                <select
-                  value={p.role}
-                  disabled={p.id === myProfile?.id}
-                  onChange={(e) => handleRoleChange(p.id, e.target.value)}
-                  className="f-body text-sm border border-stone-300 rounded-md px-2 py-1.5 disabled:opacity-50"
-                >
-                  {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={p.role}
+                    disabled={p.id === myProfile?.id}
+                    onChange={(e) => handleRoleChange(p.id, e.target.value)}
+                    className="f-body text-sm border border-stone-300 rounded-md px-2 py-1.5 disabled:opacity-50"
+                  >
+                    {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                  <button onClick={() => setEditingUser(p)} className="text-stone-400 hover:text-orange-600" title="Edit name/email">
+                    <Pencil size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -80,6 +86,20 @@ export default function AdminView() {
             await createUser(values);
             await load();
             setNewUserModal(false);
+          }}
+        />
+      )}
+
+      {editingUser && (
+        <EntityModal
+          title="Edit User"
+          fields={EDIT_USER_FIELDS}
+          initialValues={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSubmit={async (values) => {
+            await updateUser(editingUser.id, values);
+            await load();
+            setEditingUser(null);
           }}
         />
       )}

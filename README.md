@@ -38,10 +38,11 @@ In the Supabase SQL editor, run in order:
 6. `supabase/migrations/005_three_tier_roles.sql` — replaces admin/member
    with the three-tier viewer/editor/admin model described below
 
-Also deploy the edge function (from the Supabase CLI, or paste
-`supabase/functions/admin-create-user/index.ts` into a new Edge Function in
-the dashboard): `supabase functions deploy admin-create-user`. It needs no
-extra secrets — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+Also deploy the two edge functions (from the Supabase CLI, or paste each
+`index.ts` into a new Edge Function in the dashboard):
+`supabase functions deploy admin-create-user` and
+`supabase functions deploy admin-update-user`. Neither needs extra
+secrets — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
 `SUPABASE_SERVICE_ROLE_KEY` are auto-injected for every edge function in a
 project.
 
