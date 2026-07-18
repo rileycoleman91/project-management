@@ -238,8 +238,11 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => exportCsv(`${project.name}-budget.csv`,
-                  [{ key: "category", label: "Category" }, { key: "budgeted", label: "Budgeted" }, { key: "actual", label: "Actual" }],
-                  budget)}
+                  [{ key: "category", label: "Category" }, { key: "budgeted", label: "Budgeted" }, { key: "committed", label: "Committed" }, { key: "actual", label: "Actual" }, { key: "variance", label: "Variance" }],
+                  budget.map((b) => {
+                    const committed = projectMaterials.filter((m) => m.budgetItemId === b.id).reduce((sum, m) => sum + (m.cost || 0), 0);
+                    return { ...b, committed, variance: b.budgeted - b.actual - committed };
+                  }))}
                 disabled={budget.length === 0}
                 className="flex items-center gap-1.5 f-body text-sm border border-stone-300 text-stone-700 px-3 py-1.5 rounded-md hover:bg-stone-50 disabled:opacity-40"
               >
@@ -279,26 +282,26 @@ export default function ProjectDetail({ project, back, initialTab, onTabChange }
                   <tr className="f-mono text-[10px] uppercase tracking-wide text-stone-400 border-b border-stone-100">
                     <td className="px-5 py-2">Category</td>
                     <td className="px-5 py-2">Budgeted</td>
+                    <td className="px-5 py-2 hidden sm:table-cell" title="Cost of materials selected/linked to this category, whether or not they've been purchased yet">Committed</td>
                     <td className="px-5 py-2">Actual</td>
-                    <td className="px-5 py-2">Variance</td>
-                    <td className="px-5 py-2 hidden sm:table-cell">Materials</td>
+                    <td className="px-5 py-2" title="Budgeted minus Committed minus Actual — what's left once selections and real spend are both accounted for">Variance</td>
                     <td className="px-5 py-2"></td>
                   </tr>
                 </thead>
                 <tbody>
                   {budget.map((b) => {
-                    const variance = b.budgeted - b.actual;
                     const linkedMaterials = projectMaterials.filter((m) => m.budgetItemId === b.id);
-                    const materialsCost = linkedMaterials.reduce((sum, m) => sum + (m.cost || 0), 0);
+                    const committed = linkedMaterials.reduce((sum, m) => sum + (m.cost || 0), 0);
+                    const variance = b.budgeted - b.actual - committed;
                     return (
                       <tr key={b.id} className="border-b border-stone-100 last:border-b-0">
                         <td className="px-5 py-2.5 f-body text-sm text-stone-800">{b.category}</td>
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-600">{fmtMoney(b.budgeted)}</td>
+                        <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden sm:table-cell">
+                          {committed === 0 ? "—" : `${fmtMoney(committed)} (${linkedMaterials.length})`}
+                        </td>
                         <td className="px-5 py-2.5 f-mono text-xs text-stone-600">{fmtMoney(b.actual)}</td>
                         <td className={`px-5 py-2.5 f-mono text-xs ${variance < 0 ? "text-red-600" : "text-green-700"}`}>{variance < 0 ? "-" : "+"}{fmtMoney(Math.abs(variance))}</td>
-                        <td className="px-5 py-2.5 f-mono text-xs text-stone-500 hidden sm:table-cell">
-                          {linkedMaterials.length === 0 ? "—" : `${linkedMaterials.length} · ${fmtMoney(materialsCost)}`}
-                        </td>
                         <td className="px-5 py-2.5">
                           {canEdit && (
                             <div className="flex items-center gap-2 justify-end">
